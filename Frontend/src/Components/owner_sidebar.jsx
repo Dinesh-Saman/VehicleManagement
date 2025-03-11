@@ -87,28 +87,28 @@ const Sidebar = () => {
         <LogoImage style={{ width: '180px' }} />
       </LogoContainer>
       <Menu>
-        <Link to="/vehicle-management" style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Link to="/owner-management" style={{ textDecoration: 'none', color: 'inherit' }}>
           <MenuItem>
             <Icon><FaTachometerAlt /></Icon>
             Dashboard
           </MenuItem>
         </Link>
-        <Link to="/view-vehicle" style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Link to="/view-owner" style={{ textDecoration: 'none', color: 'inherit' }}>
           <MenuItem>
             <Icon><FaCar /></Icon>
-            View Vehicle
+            View Owners
           </MenuItem>
         </Link>
-        <Link to="/add-vehicle" style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Link to="/add-owner" style={{ textDecoration: 'none', color: 'inherit' }}>
           <MenuItem>
             <Icon><FaPlusCircle /></Icon>
-            Add Vehicle
+            Add Owner
           </MenuItem>
         </Link>
-        <Link to="/vehicle-report" style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Link to="/owner-report" style={{ textDecoration: 'none', color: 'inherit' }}>
           <MenuItem>
             <Icon><FaFileAlt /></Icon>
-            Vehicle Report
+            Owner Report
           </MenuItem>
         </Link>
         <Link to="/analysis-report" style={{ textDecoration: 'none', color: 'inherit' }}>
