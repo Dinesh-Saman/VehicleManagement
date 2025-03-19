@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { 
   TextField, Button, MenuItem, FormControl, Select, InputLabel, Box, 
-  Typography, FormHelperText, Grid, RadioGroup, FormControlLabel, Radio
+  Typography, FormHelperText, Grid, RadioGroup, FormControlLabel, Radio,
+  IconButton, Chip, List, ListItem, Paper, Divider
 } from '@material-ui/core';
+import { Add as AddIcon, Remove as RemoveIcon } from '@material-ui/icons';
 import Sidebar from '../../Components/owner_sidebar';
 import Header from '../../Components/navbar';
 import axios from 'axios';
@@ -20,6 +22,11 @@ const AddOwner = () => {
   const [isFormValid, setIsFormValid] = useState(false);
   const [ownerId, setOwnerId] = useState('');
   
+  // Vehicle related states
+  const [allVehicles, setAllVehicles] = useState([]);
+  const [selectedVehicles, setSelectedVehicles] = useState([]);
+  const [vehicleSelections, setVehicleSelections] = useState([{ selectedVehicle: '' }]);
+  
   // Function to generate owner ID
   const generateOwnerId = () => {
     // Generate a random 8-digit number
@@ -28,11 +35,25 @@ const AddOwner = () => {
     return `OWN${randomNum}`;
   };
   
-  // Generate owner ID on component mount
+  // Generate owner ID on component mount and fetch vehicles
   useEffect(() => {
     const newOwnerId = generateOwnerId();
     setOwnerId(newOwnerId);
+    fetchVehicles();
   }, []);
+
+  // Fetch available vehicles from the API
+  const fetchVehicles = async () => {
+    try {
+      const response = await axios.get('http://localhost:3001/vehicle/get-vehicles');
+      // Filter only active vehicles
+      const activeVehicles = response.data.filter(vehicle => vehicle.status === 'Active');
+      setAllVehicles(activeVehicles);
+    } catch (error) {
+      console.error('Error fetching vehicles:', error);
+      swal("Error", "Failed to load vehicles. Please refresh the page.", "error");
+    }
+  };
 
   // Calculate minimum date (18 years ago from today)
   const today = new Date();
@@ -55,8 +76,12 @@ const AddOwner = () => {
     
     // Check if all required fields have values
     const valid = Object.values(requiredFields).every(field => field !== '' && field !== null);
-    setIsFormValid(valid);
-  }, [name, contact, address, licenseNumber, dateOfBirth, gender]);
+    
+    // Check if at least one vehicle is selected
+    const hasVehicle = vehicleSelections.some(v => v.selectedVehicle !== '');
+    
+    setIsFormValid(valid && hasVehicle);
+  }, [name, contact, address, licenseNumber, dateOfBirth, gender, vehicleSelections]);
 
   // Validate contact number (10 digits)
   const validateContact = (value) => {
@@ -117,6 +142,58 @@ const AddOwner = () => {
     setErrors(prevErrors => ({ ...prevErrors, dateOfBirth: '' }));
   };
 
+  // Handle adding a new vehicle selection field
+  const handleAddVehicleField = () => {
+    setVehicleSelections([...vehicleSelections, { selectedVehicle: '' }]);
+  };
+
+  // Handle removing a vehicle selection field
+  const handleRemoveVehicleField = (index) => {
+    const newSelections = [...vehicleSelections];
+    newSelections.splice(index, 1);
+    setVehicleSelections(newSelections);
+    
+    // Also remove from selectedVehicles if already chosen
+    const removedVehicle = vehicleSelections[index].selectedVehicle;
+    if (removedVehicle) {
+      setSelectedVehicles(selectedVehicles.filter(id => id !== removedVehicle));
+    }
+  };
+
+  // Handle vehicle selection change
+  const handleVehicleChange = (e, index) => {
+    const value = e.target.value;
+    const newSelections = [...vehicleSelections];
+    
+    // If there was a previous selection, remove it from the selectedVehicles
+    const previousSelection = newSelections[index].selectedVehicle;
+    if (previousSelection) {
+      setSelectedVehicles(selectedVehicles.filter(id => id !== previousSelection));
+    }
+    
+    // Update the selection
+    newSelections[index].selectedVehicle = value;
+    setVehicleSelections(newSelections);
+    
+    // Add the new selection to selectedVehicles if it's not empty
+    if (value) {
+      setSelectedVehicles([...selectedVehicles.filter(id => id !== previousSelection), value]);
+    }
+    
+    // Clear any vehicle-related errors
+    setErrors(prevErrors => ({ ...prevErrors, vehicles: '' }));
+  };
+
+  // Get available vehicles (exclude already selected ones)
+  const getAvailableVehicles = () => {
+    return allVehicles.filter(vehicle => !selectedVehicles.includes(vehicle._id));
+  };
+
+  // Find vehicle details by ID
+  const getVehicleById = (id) => {
+    return allVehicles.find(vehicle => vehicle._id === id);
+  };
+
   const validateForm = () => {
     const newErrors = {};
     if (!name) newErrors.name = "Name is required.";
@@ -142,6 +219,12 @@ const AddOwner = () => {
     
     if (!gender) newErrors.gender = "Gender is required.";
     
+    // Validate that at least one vehicle is selected
+    const hasSelectedVehicle = vehicleSelections.some(v => v.selectedVehicle !== '');
+    if (!hasSelectedVehicle) {
+      newErrors.vehicles = "At least one vehicle must be selected.";
+    }
+    
     return newErrors;
   };
 
@@ -156,6 +239,11 @@ const AddOwner = () => {
     // Format date of birth for backend
     const formattedDOB = new Date(dateOfBirth).toISOString();
 
+    // Filter out empty vehicle selections
+    const validVehicleIds = vehicleSelections
+      .map(v => v.selectedVehicle)
+      .filter(id => id !== '');
+
     const newOwner = {
       owner_id: ownerId,
       name,
@@ -164,11 +252,24 @@ const AddOwner = () => {
       license_number: licenseNumber,
       date_of_birth: formattedDOB,
       gender,
+      vehicles: validVehicleIds // Array of vehicle IDs
     };
 
     try {
+      // First create the owner
       await axios.post('http://localhost:3001/owner/add-owner', newOwner);
-      swal("Success", "New owner added successfully!", "success");
+      
+      // Then associate each vehicle with this owner
+      const vehicleUpdatePromises = validVehicleIds.map(vehicleId => 
+        axios.put(`http://localhost:3001/vehicle/update-vehicle-owner/${vehicleId}`, { 
+          ownerId: ownerId 
+        })
+      );
+      
+      await Promise.all(vehicleUpdatePromises);
+      
+      swal("Success", "New owner and vehicle assignments added successfully!", "success");
+      
       // Reset form fields but keep the owner ID
       setName('');
       setContact('');
@@ -176,11 +277,16 @@ const AddOwner = () => {
       setLicenseNumber('');
       setDateOfBirth('');
       setGender('');
+      setVehicleSelections([{ selectedVehicle: '' }]);
+      setSelectedVehicles([]);
       setErrors({});
       
       // Generate a new owner ID for the next entry with the new format
       const newOwnerId = generateOwnerId();
       setOwnerId(newOwnerId);
+      
+      // Refresh the vehicle list
+      fetchVehicles();
     } catch (error) {
       console.error(error);
       
@@ -238,7 +344,7 @@ const AddOwner = () => {
               textAlign: 'center', 
               marginTop:'30px' 
             }}>
-              Register New Owner
+              Register New Owner with Vehicles
             </Typography>
           </Box>
 
@@ -351,16 +457,98 @@ const AddOwner = () => {
                   <FormHelperText>{errors.gender}</FormHelperText>
                 </FormControl>
                 
+                {/* Vehicle Selection Section */}
+                <Typography variant="h6" style={{ marginTop: 20 }}>
+                  Vehicle Assignment
+                </Typography>
+                <Typography variant="body2" color="textSecondary" gutterBottom>
+                  Assign one or more vehicles to this owner
+                </Typography>
+                
+                {vehicleSelections.map((selection, index) => (
+                  <Box key={index} display="flex" alignItems="center" mt={2}>
+                    <FormControl 
+                      variant="outlined" 
+                      fullWidth 
+                      error={!!errors.vehicles}
+                    >
+                      <InputLabel id={`vehicle-select-label-${index}`}>Select Vehicle</InputLabel>
+                      <Select
+                        labelId={`vehicle-select-label-${index}`}
+                        value={selection.selectedVehicle}
+                        onChange={(e) => handleVehicleChange(e, index)}
+                        label="Select Vehicle"
+                      >
+                        <MenuItem value="">
+                          <em>Select a vehicle</em>
+                        </MenuItem>
+                        {getAvailableVehicles().map((vehicle) => (
+                          <MenuItem key={vehicle._id} value={vehicle._id}>
+                            {vehicle.make} {vehicle.model} ({vehicle.registrationNumber})
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      {index === 0 && errors.vehicles && (
+                        <FormHelperText>{errors.vehicles}</FormHelperText>
+                      )}
+                    </FormControl>
+                    
+                    <Box ml={1} display="flex">
+                      {/* Add button */}
+                      <IconButton 
+                        color="primary" 
+                        onClick={handleAddVehicleField}
+                        disabled={getAvailableVehicles().length === 0 || 
+                                  vehicleSelections.some(v => v.selectedVehicle === '')}
+                      >
+                        <AddIcon />
+                      </IconButton>
+                      
+                      {/* Remove button (disabled for the first item if it's the only one) */}
+                      {(vehicleSelections.length > 1 || index > 0) && (
+                        <IconButton 
+                          color="secondary" 
+                          onClick={() => handleRemoveVehicleField(index)}
+                        >
+                          <RemoveIcon />
+                        </IconButton>
+                      )}
+                    </Box>
+                  </Box>
+                ))}
+                
+                {/* Selected Vehicles Summary */}
+                {selectedVehicles.length > 0 && (
+                  <Paper style={{ padding: '15px', marginTop: '20px' }}>
+                    <Typography variant="subtitle1" gutterBottom>
+                      Selected Vehicles ({selectedVehicles.length}):
+                    </Typography>
+                    <Box display="flex" flexWrap="wrap">
+                      {selectedVehicles.map(vehicleId => {
+                        const vehicle = getVehicleById(vehicleId);
+                        return vehicle ? (
+                          <Chip
+                            key={vehicle._id}
+                            label={`${vehicle.make} ${vehicle.model} (${vehicle.registrationNumber})`}
+                            color="primary"
+                            style={{ margin: '4px' }}
+                          />
+                        ) : null;
+                      })}
+                    </Box>
+                  </Paper>
+                )}
+                
                 <Button
                   fullWidth
                   variant="contained"
                   color="primary"
                   size="large"
                   type="submit"
-                  style={{ marginTop: 16 }}
+                  style={{ marginTop: 25 }}
                   disabled={!isFormValid}
                 >
-                  Register Owner
+                  Register Owner with Vehicles
                 </Button>
               </Box>
             </Box>
@@ -381,8 +569,30 @@ const AddOwner = () => {
                   width: '100%',
                   height: 'auto',
                   borderRadius: '10px',
+                  marginBottom: '20px'
                 }}
               />
+              
+              {/* Vehicle info section */}
+              <Paper style={{ padding: '15px', textAlign: 'left' }}>
+                <Typography variant="h6" gutterBottom>
+                  Vehicle Assignment Guide
+                </Typography>
+                <List>
+                  <ListItem>
+                    • Select vehicles from the dropdown menu
+                  </ListItem>
+                  <ListItem>
+                    • Click the + button to add more vehicles
+                  </ListItem>
+                  <ListItem>
+                    • Click the - button to remove a vehicle
+                  </ListItem>
+                  <ListItem>
+                    • Vehicles already assigned to other owners will not appear
+                  </ListItem>
+                </List>
+              </Paper>
             </Box>
           </Box>
         </Box>

@@ -5,6 +5,7 @@ import Sidebar from '../../Components/sidebar';
 import Header from '../../Components/navbar';
 import { makeStyles } from '@material-ui/core/styles';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
 // Custom Pagination Component
 const CustomPagination = ({ count, page, rowsPerPage, onPageChange }) => {
@@ -65,7 +66,7 @@ const ViewVehicle = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchCriteria, setSearchCriteria] = useState("registrationNumber");
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(6);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -87,13 +88,28 @@ const ViewVehicle = () => {
   };
 
   const handleDelete = async (id) => {
-    try {
-      await axios.delete(`http://localhost:3001/vehicle/delete-vehicle/${id}`);
-      setVehicleData(vehicleData.filter(vehicle => vehicle._id !== id));
-    } catch (error) {
-      console.error("There was an error deleting the vehicle!", error);
-    }
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!"
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await axios.delete(`http://localhost:3001/vehicle/delete-vehicle/${id}`);
+          setVehicleData(vehicleData.filter(vehicle => vehicle._id !== id));
+          Swal.fire("Deleted!", "The vehicle record has been deleted.", "success");
+        } catch (error) {
+          console.error("There was an error deleting the vehicle!", error);
+          Swal.fire("Error", "There was a problem deleting the record.", "error");
+        }
+      }
+    });
   };
+  
 
   const handleSearchQueryChange = (event) => {
     setSearchQuery(event.target.value);

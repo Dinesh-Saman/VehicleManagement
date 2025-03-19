@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField, MenuItem, FormControl, Select, InputLabel, TablePagination } from '@material-ui/core';
+import Swal from 'sweetalert2'; // Import SweetAlert2
 import Sidebar from '../../Components/owner_sidebar';
 import Header from '../../Components/navbar';
 import { makeStyles } from '@material-ui/core/styles';
@@ -65,7 +66,7 @@ const ViewOwner = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchCriteria, setSearchCriteria] = useState("owner_id");
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(6);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -75,6 +76,13 @@ const ViewOwner = () => {
         setOwnerData(response.data);
       } catch (error) {
         console.error("There was an error fetching the owner data!", error);
+        // Show error message with SweetAlert
+        Swal.fire({
+          title: 'Error!',
+          text: 'Failed to load owner data',
+          icon: 'error',
+          confirmButtonColor: '#d33',
+        });
       }
     };
 
@@ -87,11 +95,53 @@ const ViewOwner = () => {
   };
 
   const handleDelete = async (id) => {
-    try {
-      await axios.delete(`http://localhost:3001/owner/delete-owner/${id}`);
-      setOwnerData(ownerData.filter(owner => owner._id !== id));
-    } catch (error) {
-      console.error("There was an error deleting the owner!", error);
+    // First confirm deletion with SweetAlert
+    const confirmResult = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!'
+    });
+    
+    if (confirmResult.isConfirmed) {
+      try {
+        // First check if owner has associated vehicles
+        const vehicleCheckResponse = await axios.get(`http://localhost:3001/vehicle/check-vehicles/${id}`);
+        
+        if (vehicleCheckResponse.data.hasVehicles) {
+          // Show error message if owner has vehicles
+          Swal.fire({
+            title: 'Cannot Delete!',
+            text: 'Vehicles associated with this owner exist.',
+            icon: 'error',
+            confirmButtonColor: '#d33',
+          });
+          return;
+        }
+        
+        // If no vehicles, proceed with deletion
+        await axios.delete(`http://localhost:3001/owner/delete-owner/${id}`);
+        setOwnerData(ownerData.filter(owner => owner._id !== id));
+        
+        // Show success message
+        Swal.fire({
+          title: 'Deleted!',
+          text: 'Owner has been deleted successfully.',
+          icon: 'success',
+          confirmButtonColor: '#3085d6',
+        });
+      } catch (error) {
+        console.error("There was an error deleting the owner!", error);
+        Swal.fire({
+          title: 'Error!',
+          text: 'Error deleting owner: ' + (error.response?.data?.message || error.message),
+          icon: 'error',
+          confirmButtonColor: '#d33',
+        });
+      }
     }
   };
 

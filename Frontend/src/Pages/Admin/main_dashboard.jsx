@@ -88,13 +88,13 @@ const MainDashboard = () => {
       path: '/owner-management',
     },
     {
-      title: 'Service & Maintenance Records',
-      illustration: 'https://cdni.iconscout.com/illustration/premium/thumb/workers-of-car-service-center-painting-illustration-download-in-svg-png-gif-file-formats--teamwork-skilled-paint-team-pack-automobile-illustrations-2451635.png', // Replace with your image URL
+      title: 'Inventory Management',
+      illustration: 'https://media.licdn.com/dms/image/v2/D4D12AQGJp3926DUjAw/article-cover_image-shrink_600_2000/article-cover_image-shrink_600_2000/0/1700577262165?e=2147483647&v=beta&t=5q3FIE9dikbrleHTUCU4ck5UMckNfM9db76DoFtK0oE', // Replace with your image URL
       path: '/service-maintenance',
     },
     {
-      title: 'GPS Vehicle Tracking',
-      illustration: 'https://static.vecteezy.com/system/resources/previews/002/916/703/non_2x/big-isolated-vehicle-colorful-icons-flat-illustrations-of-delivery-by-van-through-gps-tracking-location-delivery-vehicle-gas-gasoline-fuel-delivery-instant-delivery-online-delivery-vector.jpg', // Replace with your image URL
+      title: 'Service Reminder & Modifier',
+      illustration: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRHWUqGC6ehSAoUKk58FAPW8UNOzFBwpeC3w&s', // Replace with your image URL
       path: '/gps-tracking',
     },
   ];

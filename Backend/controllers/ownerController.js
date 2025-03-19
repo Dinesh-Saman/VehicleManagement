@@ -1,11 +1,12 @@
 // controllers/ownerController.js
 const Owner = require("../models/ownerModel");
+const Vehicle = require("../models/vehicleModel");
 const mongoose = require('mongoose'); // Import mongoose for ObjectId validation
 
 // Add a new owner
 exports.addNewOwner = async (req, res) => {
     try {
-        const { owner_id, name, contact, address, license_number, date_of_birth, gender } = req.body;
+        const { owner_id, name, contact, address, license_number, date_of_birth, gender, vehicles } = req.body;
 
         // Log the received data for debugging
         console.log(req.body);
@@ -66,6 +67,7 @@ exports.addNewOwner = async (req, res) => {
             license_number,
             date_of_birth,
             gender,
+            vehicles // Include vehicles array
         });
 
         await newOwner.save();
@@ -126,10 +128,9 @@ exports.getOwnerByOwnerId = async (req, res) => {
     }
 };
 
-// Update an owner
 exports.updateOwner = async (req, res) => {
     const ownerId = req.params.id;
-    const { owner_id, name, contact, address, license_number, date_of_birth, gender } = req.body;
+    const { owner_id, name, contact, address, license_number, date_of_birth, gender, vehicles } = req.body;
 
     // Validate inputs
     if (!(owner_id && name && contact && address && license_number && date_of_birth && gender)) {
@@ -188,7 +189,7 @@ exports.updateOwner = async (req, res) => {
             });
         }
 
-        // Update the owner
+        // Update the owner, now including vehicles array
         const result = await Owner.updateOne(
             { _id: ownerId },
             {
@@ -199,6 +200,7 @@ exports.updateOwner = async (req, res) => {
                 license_number,
                 date_of_birth,
                 gender,
+                vehicles // Include vehicles array in the update
             }
         );
 
@@ -265,5 +267,32 @@ exports.searchOwnersByName = async (req, res) => {
         res.json(owners);
     } catch (err) {
         res.status(500).json({ message: err.message });
+    }
+};
+
+// Check if owner has associated vehicles
+exports.checkOwnerVehicles = async (req, res) => {
+    const ownerId = req.params.id;
+    
+    try {
+        // Check if the ownerId is a valid ObjectId
+        if (!mongoose.Types.ObjectId.isValid(ownerId)) {
+            return res.status(400).json({ message: "Invalid owner ID format" });
+        }
+        
+        // Convert ownerId to a valid ObjectId using the 'new' keyword
+        const ownerObjectId = new mongoose.Types.ObjectId(ownerId);
+        
+        // Find vehicles where this owner is assigned
+        const vehicleCount = await Vehicle.countDocuments({ owner: ownerObjectId });
+        console.log('Vehicle count for owner', ownerId, ':', vehicleCount);
+        
+        res.json({
+            hasVehicles: vehicleCount > 0,
+            count: vehicleCount
+        });
+    } catch (err) {
+        console.error('Error checking owner vehicles:', err);
+        res.status(500).json({ message: 'Server error checking owner vehicles' });
     }
 };

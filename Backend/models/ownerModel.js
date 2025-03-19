@@ -35,6 +35,7 @@ const ownerSchema = new Schema({
     required: true,
     enum: ['Male', 'Female', 'Other'], // Restricted to specific values
   },
+  vehicles: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Vehicle' }]
 }, { timestamps: true }); // Adds createdAt and updatedAt timestamps
 
 module.exports = mongoose.model('Owner', ownerSchema);

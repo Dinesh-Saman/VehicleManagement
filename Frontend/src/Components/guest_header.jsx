@@ -1,18 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, IconButton, Menu, MenuItem, Avatar } from '@material-ui/core';
 import SearchIcon from '@material-ui/icons/Search';
-import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import { Link, useNavigate } from 'react-router-dom'; 
 import './guest_header.css';
 
 const Header = () => {
   const [anchorEl, setAnchorEl] = useState(null);
-  const [firstName, setFirstName] = useState('Guest'); 
+  const [firstName, setFirstName] = useState('Admin'); // Default to Admin
   const token = localStorage.getItem('token'); 
   const navigate = useNavigate(); 
 
   useEffect(() => {
-    if (token) {
+    // Check if username exists in localStorage
+    const storedUsername = localStorage.getItem('username');
+    
+    if (storedUsername) {
+      // If username exists in localStorage, use it
+      setFirstName(storedUsername);
+    } else if (token) {
+      // If no username in localStorage but token exists, try to fetch from server
       const fetchUserName = async () => {
         try {
           const response = await fetch('http://localhost:3002/user-first-name', {
@@ -21,7 +27,9 @@ const Header = () => {
           const data = await response.json();
 
           if (response.ok) {
-            setFirstName(data.firstName); 
+            setFirstName(data.firstName);
+            // Also store in localStorage for future use
+            localStorage.setItem('username', data.firstName);
           }
         } catch (error) {
           console.error('Error fetching user name:', error);
@@ -36,7 +44,8 @@ const Header = () => {
   const handleClose = () => setAnchorEl(null);
   const handleLogout = () => {
     localStorage.removeItem('token'); 
-    localStorage.removeItem('firstName');
+    localStorage.removeItem('username'); // Remove username when logging out
+    setFirstName('Admin'); // Reset to default
     handleClose();
     navigate('/login'); 
   };
@@ -81,9 +90,9 @@ const Header = () => {
           ) : (
             <>
               <Typography variant="body1" style={{ marginLeft: '8px', color: '#fff' }}>
-                Hi, Guest
+                Hi, Admin
               </Typography>
-              <IconButton color="inherit">
+              <IconButton color="inherit" onClick={handleProfileClick}>
                 <Avatar 
                   src="https://www.w3schools.com/howto/img_avatar.png" 
                   alt="Guest Avatar" 

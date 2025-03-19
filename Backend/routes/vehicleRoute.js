@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const vehicleController = require('../controllers/vehicleController');
+const ownerController = require('../controllers/ownerController');
 
 // Add a new vehicle
 router.post('/add-vehicle/', vehicleController.addNewVehicle);
@@ -23,5 +24,12 @@ router.get('/status-counts', vehicleController.getVehicleCountsByStatus);
 
 // Get vehicle counts by type
 router.get('/type-counts', vehicleController.getVehicleCountsByType);
+
+// Vehicle-owner relationship routes
+router.put('/update-vehicle-owner/:id', vehicleController.updateVehicleOwner);
+router.get('/get-vehicles-by-owner/:ownerId', vehicleController.getVehiclesByOwner);
+router.put('/remove-vehicle-owner/:ownerId', vehicleController.removeVehicleOwner);
+
+router.get('/check-vehicles/:id', ownerController.checkOwnerVehicles);
 
 module.exports = router;

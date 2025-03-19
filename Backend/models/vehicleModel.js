@@ -42,6 +42,11 @@ const vehicleSchema = new Schema({
     enum: ['Active', 'Inactive'], 
     default: 'Active', 
   },
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Owner',
+    required: false
+  }
 }, { timestamps: true }); 
 
 module.exports = mongoose.model('Vehicle', vehicleSchema);

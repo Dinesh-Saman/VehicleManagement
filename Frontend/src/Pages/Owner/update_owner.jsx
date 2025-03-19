@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  TextField, Button, Box, Typography, FormHelperText, Grid, RadioGroup, 
-  FormControlLabel, Radio, FormControl
+  TextField, Button, MenuItem, FormControl, Select, InputLabel, Box, 
+  Typography, FormHelperText, RadioGroup, FormControlLabel, Radio,
+  IconButton, Chip, List, ListItem, Paper, Divider
 } from '@material-ui/core';
+import { Add as AddIcon, Remove as RemoveIcon } from '@material-ui/icons';
 import Sidebar from '../../Components/owner_sidebar';
 import Header from '../../Components/navbar';
 import axios from 'axios';
@@ -24,6 +26,12 @@ const UpdateOwner = () => {
   const [errors, setErrors] = useState({});
   const [isFormValid, setIsFormValid] = useState(false);
   
+  // Vehicle related states
+  const [allVehicles, setAllVehicles] = useState([]);
+  const [selectedVehicles, setSelectedVehicles] = useState([]);
+  const [vehicleSelections, setVehicleSelections] = useState([{ selectedVehicle: '' }]);
+  const [ownerVehicles, setOwnerVehicles] = useState([]); // Store initially assigned vehicles
+  
   // Calculate minimum date (18 years ago from today)
   const today = new Date();
   const minDate = new Date(
@@ -32,33 +40,97 @@ const UpdateOwner = () => {
     today.getDate()
   ).toISOString().split('T')[0]; // Format as YYYY-MM-DD
 
-  // Fetch owner data when component mounts
+  // Fetch owner data and vehicles when component mounts
   useEffect(() => {
-    const fetchOwner = async () => {
-      try {
-        const response = await axios.get(`http://localhost:3001/owner/get-owner/${id}`);
-        const ownerData = response.data;
-        
-        setOwnerId(ownerData.owner_id);
-        setName(ownerData.name);
-        setContact(ownerData.contact);
-        setAddress(ownerData.address);
-        setLicenseNumber(ownerData.license_number);
-        
-        // Format date from ISO to YYYY-MM-DD for the date input
-        const dobDate = new Date(ownerData.date_of_birth);
-        const formattedDOB = dobDate.toISOString().split('T')[0];
-        setDateOfBirth(formattedDOB);
-        
-        setGender(ownerData.gender);
-      } catch (error) {
-        console.error(error);
-        swal("Error", "Failed to fetch owner data.", "error");
-      }
-    };
-
     fetchOwner();
+    fetchVehicles();
   }, [id]);
+  
+  // Fetch owner data including their vehicles
+// In your fetchOwner function in UpdateOwner.js
+const fetchOwner = async () => {
+  try {
+    const response = await axios.get(`http://localhost:3001/owner/get-owner/${id}`);
+    const ownerData = response.data;
+    
+    setOwnerId(ownerData.owner_id);
+    setName(ownerData.name);
+    setContact(ownerData.contact);
+    setAddress(ownerData.address);
+    setLicenseNumber(ownerData.license_number);
+    
+    // Format date from ISO to YYYY-MM-DD for the date input
+    const dobDate = new Date(ownerData.date_of_birth);
+    const formattedDOB = dobDate.toISOString().split('T')[0];
+    setDateOfBirth(formattedDOB);
+    
+    setGender(ownerData.gender);
+    
+    // If owner has vehicles, set up the vehicle selection
+    if (ownerData.vehicles && ownerData.vehicles.length > 0) {
+      // Store the vehicle IDs in selectedVehicles state
+      setSelectedVehicles(ownerData.vehicles);
+      
+      // Initialize vehicle selections with owner's vehicles
+      const initialSelections = ownerData.vehicles.map(vehicleId => ({
+        selectedVehicle: vehicleId
+      }));
+      setVehicleSelections(initialSelections);
+    }
+  } catch (error) {
+    console.error(error);
+    swal("Error", "Failed to fetch owner data.", "error");
+  }
+};
+
+// Add this function to get vehicle details by ID
+const getVehicleDetailsFromId = (vehicleId) => {
+  // Find the vehicle in allVehicles array
+  return allVehicles.find(vehicle => vehicle._id === vehicleId);
+};
+
+// Then in your render section, modify the Selected Vehicles Summary section:
+{/* Selected Vehicles Summary */}
+{selectedVehicles.length > 0 && (
+  <Paper style={{ padding: '15px', marginTop: '20px' }}>
+    <Typography variant="subtitle1" gutterBottom>
+      Selected Vehicles ({selectedVehicles.length}):
+    </Typography>
+    <Box display="flex" flexWrap="wrap">
+      {selectedVehicles.map(vehicleId => {
+        const vehicle = getVehicleDetailsFromId(vehicleId);
+        return vehicle ? (
+          <Chip
+            key={vehicleId}
+            label={`${vehicle.make} ${vehicle.model} (${vehicle.registrationNumber})`}
+            color="primary"
+            style={{ margin: '4px' }}
+          />
+        ) : (
+          <Chip
+            key={vehicleId}
+            label={`Loading vehicle details...`}
+            color="default"
+            style={{ margin: '4px' }}
+          />
+        );
+      })}
+    </Box>
+  </Paper>
+)}
+
+  // Fetch available vehicles from the API
+  const fetchVehicles = async () => {
+    try {
+      const response = await axios.get('http://localhost:3001/vehicle/get-vehicles');
+      // Filter only active vehicles
+      const activeVehicles = response.data.filter(vehicle => vehicle.status === 'Active');
+      setAllVehicles(activeVehicles);
+    } catch (error) {
+      console.error('Error fetching vehicles:', error);
+      swal("Error", "Failed to load vehicles. Please refresh the page.", "error");
+    }
+  };
 
   // Effect to check if all required fields are filled
   useEffect(() => {
@@ -73,8 +145,12 @@ const UpdateOwner = () => {
     
     // Check if all required fields have values
     const valid = Object.values(requiredFields).every(field => field !== '' && field !== null);
-    setIsFormValid(valid);
-  }, [name, contact, address, licenseNumber, dateOfBirth, gender]);
+    
+    // Check if at least one vehicle is selected
+    const hasVehicle = vehicleSelections.some(v => v.selectedVehicle !== '');
+    
+    setIsFormValid(valid && hasVehicle);
+  }, [name, contact, address, licenseNumber, dateOfBirth, gender, vehicleSelections]);
 
   // Validate contact number (10 digits)
   const validateContact = (value) => {
@@ -133,6 +209,60 @@ const UpdateOwner = () => {
     setDateOfBirth(e.target.value);
     setErrors(prevErrors => ({ ...prevErrors, dateOfBirth: '' }));
   };
+  
+  // Handle adding a new vehicle selection field
+  const handleAddVehicleField = () => {
+    setVehicleSelections([...vehicleSelections, { selectedVehicle: '' }]);
+  };
+
+  // Handle removing a vehicle selection field
+  const handleRemoveVehicleField = (index) => {
+    const newSelections = [...vehicleSelections];
+    newSelections.splice(index, 1);
+    setVehicleSelections(newSelections);
+    
+    // Also remove from selectedVehicles if already chosen
+    const removedVehicle = vehicleSelections[index].selectedVehicle;
+    if (removedVehicle) {
+      setSelectedVehicles(selectedVehicles.filter(id => id !== removedVehicle));
+    }
+  };
+
+  // Handle vehicle selection change
+  const handleVehicleChange = (e, index) => {
+    const value = e.target.value;
+    const newSelections = [...vehicleSelections];
+    
+    // If there was a previous selection, remove it from the selectedVehicles
+    const previousSelection = newSelections[index].selectedVehicle;
+    if (previousSelection) {
+      setSelectedVehicles(selectedVehicles.filter(id => id !== previousSelection));
+    }
+    
+    // Update the selection
+    newSelections[index].selectedVehicle = value;
+    setVehicleSelections(newSelections);
+    
+    // Add the new selection to selectedVehicles if it's not empty
+    if (value) {
+      setSelectedVehicles([...selectedVehicles.filter(id => id !== previousSelection), value]);
+    }
+    
+    // Clear any vehicle-related errors
+    setErrors(prevErrors => ({ ...prevErrors, vehicles: '' }));
+  };
+
+  // Get available vehicles (excluding already selected ones)
+  const getAvailableVehicles = () => {
+    // Combine all vehicles with owner's current vehicles 
+    // (so they can keep their current vehicles or reassign them)
+    return allVehicles;
+  };
+
+  // Find vehicle details by ID
+  const getVehicleById = (id) => {
+    return allVehicles.find(vehicle => vehicle._id === id);
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -159,6 +289,12 @@ const UpdateOwner = () => {
     
     if (!gender) newErrors.gender = "Gender is required.";
     
+    // Validate that at least one vehicle is selected
+    const hasSelectedVehicle = vehicleSelections.some(v => v.selectedVehicle !== '');
+    if (!hasSelectedVehicle) {
+      newErrors.vehicles = "At least one vehicle must be selected.";
+    }
+    
     return newErrors;
   };
 
@@ -169,10 +305,18 @@ const UpdateOwner = () => {
       setErrors(validationErrors);
       return;
     }
-
+  
     // Format date of birth for backend
     const formattedDOB = new Date(dateOfBirth).toISOString();
-
+  
+    // Filter out empty vehicle selections
+    const validVehicleIds = vehicleSelections
+      .map(v => v.selectedVehicle)
+      .filter(id => id !== '');
+      
+    // Get current owner vehicles IDs for comparison
+    const currentVehicleIds = ownerVehicles.map(vehicle => vehicle._id);
+  
     const updatedOwner = {
       owner_id: ownerId,
       name,
@@ -181,11 +325,32 @@ const UpdateOwner = () => {
       license_number: licenseNumber,
       date_of_birth: formattedDOB,
       gender,
+      vehicles: validVehicleIds
     };
-
+  
     try {
+      // First update the owner details
       await axios.put(`http://localhost:3001/owner/update-owner/${id}`, updatedOwner);
-      swal("Success", "Owner updated successfully!", "success");
+      
+      // Handle vehicle reassignments
+      
+      // Get newly added vehicles (vehicles that weren't previously owned)
+      const newVehicles = validVehicleIds.filter(vid => !currentVehicleIds.includes(vid));
+      
+      // Get removed vehicles (vehicles that were previously owned but now removed)
+      const removedVehicles = currentVehicleIds.filter(vid => !validVehicleIds.includes(vid));
+      
+      // Associate new vehicles with this owner
+      const addVehiclePromises = newVehicles.map(vehicleId => 
+        axios.put(`http://localhost:3001/vehicle/update-vehicle-owner/${vehicleId}`, {
+          ownerId: ownerId  // Send the custom owner_id (like "OWN61849195")
+        })
+      );
+      
+      // Wait for all vehicle operations to complete
+      await Promise.all([...addVehiclePromises]);
+      
+      swal("Success", "Owner and vehicle assignments updated successfully!", "success");
       navigate('/view-owner'); // Navigate to owner list page after successful update
     } catch (error) {
       console.error(error);
@@ -244,7 +409,7 @@ const UpdateOwner = () => {
               textAlign: 'center', 
               marginTop:'30px' 
             }}>
-              Update Owner Details
+              Update Owner and Vehicle Assignment
             </Typography>
           </Box>
 
@@ -357,7 +522,89 @@ const UpdateOwner = () => {
                   <FormHelperText>{errors.gender}</FormHelperText>
                 </FormControl>
                 
-                <Box display="flex" justifyContent="space-between" mt={2}>
+                {/* Vehicle Selection Section */}
+                <Typography variant="h6" style={{ marginTop: 20 }}>
+                  Vehicle Assignment
+                </Typography>
+                <Typography variant="body2" color="textSecondary" gutterBottom>
+                  Update vehicle assignments for this owner
+                </Typography>
+                
+                {vehicleSelections.map((selection, index) => (
+                  <Box key={index} display="flex" alignItems="center" mt={2}>
+                    <FormControl 
+                      variant="outlined" 
+                      fullWidth 
+                      error={!!errors.vehicles}
+                    >
+                      <InputLabel id={`vehicle-select-label-${index}`}>Select Vehicle</InputLabel>
+                      <Select
+                        labelId={`vehicle-select-label-${index}`}
+                        value={selection.selectedVehicle}
+                        onChange={(e) => handleVehicleChange(e, index)}
+                        label="Select Vehicle"
+                      >
+                        <MenuItem value="">
+                          <em>Select a vehicle</em>
+                        </MenuItem>
+                        {getAvailableVehicles().map((vehicle) => (
+                          <MenuItem key={vehicle._id} value={vehicle._id}>
+                            {vehicle.make} {vehicle.model} ({vehicle.registrationNumber})
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      {index === 0 && errors.vehicles && (
+                        <FormHelperText>{errors.vehicles}</FormHelperText>
+                      )}
+                    </FormControl>
+                    
+                    <Box ml={1} display="flex">
+                      {/* Add button */}
+                      <IconButton 
+                        color="primary" 
+                        onClick={handleAddVehicleField}
+                        disabled={getAvailableVehicles().length === 0 || 
+                                  vehicleSelections.some(v => v.selectedVehicle === '')}
+                      >
+                        <AddIcon />
+                      </IconButton>
+                      
+                      {/* Remove button (disabled for the first item if it's the only one) */}
+                      {(vehicleSelections.length > 1 || index > 0) && (
+                        <IconButton 
+                          color="secondary" 
+                          onClick={() => handleRemoveVehicleField(index)}
+                        >
+                          <RemoveIcon />
+                        </IconButton>
+                      )}
+                    </Box>
+                  </Box>
+                ))}
+                
+                {/* Selected Vehicles Summary */}
+                {selectedVehicles.length > 0 && (
+                  <Paper style={{ padding: '15px', marginTop: '20px' }}>
+                    <Typography variant="subtitle1" gutterBottom>
+                      Selected Vehicles ({selectedVehicles.length}):
+                    </Typography>
+                    <Box display="flex" flexWrap="wrap">
+                      {selectedVehicles.map(vehicleId => {
+                        const vehicle = getVehicleById(vehicleId);
+                        return vehicle ? (
+                          <Chip
+                            key={vehicle._id}
+                            label={`${vehicle.make} ${vehicle.model} (${vehicle.registrationNumber})`}
+                            color="primary"
+                            style={{ margin: '4px' }}
+                          />
+                        ) : null;
+                      })}
+                    </Box>
+                  </Paper>
+                )}
+                
+                <Box display="flex" justifyContent="space-between" mt={3}>
                   <Button
                     variant="contained"
                     color="secondary"
@@ -397,9 +644,30 @@ const UpdateOwner = () => {
                   width: '100%',
                   height: 'auto',
                   borderRadius: '10px',
-                  marginTop:'5px'
+                  marginBottom: '20px'
                 }}
               />
+              
+              {/* Vehicle info section */}
+              <Paper style={{ padding: '15px', textAlign: 'left' }}>
+                <Typography variant="h6" gutterBottom>
+                  Vehicle Assignment Guide
+                </Typography>
+                <List>
+                  <ListItem>
+                    • Current vehicles will remain selected
+                  </ListItem>
+                  <ListItem>
+                    • Add new vehicles using the dropdown menu
+                  </ListItem>
+                  <ListItem>
+                    • Remove vehicles by clicking the - button
+                  </ListItem>
+                  <ListItem>
+                    • Only active vehicles can be assigned
+                  </ListItem>
+                </List>
+              </Paper>
             </Box>
           </Box>
         </Box>

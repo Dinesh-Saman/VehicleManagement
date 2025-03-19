@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate  } from 'react-router-dom';
 import VehicleManageDashboard from './Pages/Vehicle/dashboard';
 import OwnerManageDashboard from './Pages/Vehicle/dashboard';
 import AddVehicle from './Pages/Vehicle/add_vehicle';
@@ -16,12 +16,19 @@ import OwnerManagementDashboard from './Pages/Owner/dashboard';
 import MainDashboard from './Pages/Admin/main_dashboard';
 import Footer from './Components/footer';
 import Header from './Components/guest_header';
+import Login from './Pages/Admin/login';
+import Register from './Pages/Admin/register';
 
 function App() {
   return (
       <div>
         <Header></Header>
         <Routes>
+           {/* Redirect from root to login */}
+           <Route path="/" element={<Navigate to="/login" replace />} />
+
+          <Route path="/login" element={<Login/>} />
+          <Route path="/register" element={<Register/>} />
           <Route path="/vehicle-management" element={<VehicleManageDashboard />} />
           <Route path="/add-vehicle" element={<AddVehicle />} />
           <Route path="/update-vehicle/:id" element={<UpdateVehicle />} />

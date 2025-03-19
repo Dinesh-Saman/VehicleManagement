@@ -1,5 +1,6 @@
 // controllers/vehicleController.js
 const Vehicle = require("../models/vehicleModel");
+const Owner = require("../models/ownerModel");
 const mongoose = require('mongoose'); // Import mongoose for ObjectId validation
 
 // Add a new vehicle
@@ -215,6 +216,74 @@ exports.getVehicleCountsByType = async (req, res) => {
     }
 
     res.json(typeCounts);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Update vehicle owner association
+// In your vehicleController.js or wherever update-vehicle-owner is defined
+exports.updateVehicleOwner = async (req, res) => {
+  const vehicleId = req.params.id;
+  const { ownerId } = req.body; // This is your custom format (e.g., "OWN61849195")
+
+  try {
+    // First find the owner document by owner_id to get its _id
+    const owner = await Owner.findOne({ owner_id: ownerId });
+    
+    if (!owner) {
+      return res.status(404).json({ message: "Owner not found" });
+    }
+
+    // Now use the owner's _id (which is a proper ObjectId) to update the vehicle
+    const result = await Vehicle.updateOne(
+      { _id: vehicleId },
+      { owner: owner._id } // Use _id instead of owner_id
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(400).json({ message: "No changes were made" });
+    }
+
+    return res.status(200).json({ message: "Vehicle owner updated successfully!" });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+// Get vehicles by owner ID
+exports.getVehiclesByOwner = async (req, res) => {
+  const { ownerId } = req.params;
+
+  try {
+    const vehicles = await Vehicle.find({ owner: ownerId });
+    
+    if (vehicles.length === 0) {
+      return res.json({ message: "No vehicles found for this owner" });
+    }
+    
+    res.json(vehicles);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Remove owner from vehicle (when deleting an owner)
+exports.removeVehicleOwner = async (req, res) => {
+  const { ownerId } = req.params;
+
+  try {
+    // Update all vehicles owned by this owner
+    const result = await Vehicle.updateMany(
+      { owner: ownerId },
+      { $unset: { owner: "" } }
+    );
+
+    res.json({ 
+      message: "Owner removed from vehicles", 
+      vehiclesUpdated: result.modifiedCount 
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
