@@ -17,6 +17,8 @@ const UpdateVehicle = () => {
   const [fuelType, setFuelType] = useState('');
   const [vehicleType, setVehicleType] = useState('');
   const [color, setColor] = useState('');
+  const [mileage, setMileage] = useState(0);
+  const [lastServiceMileage, setLastServiceMileage] = useState(0);
   const [status, setStatus] = useState('Active');
   const [errors, setErrors] = useState({});
   const [anchorEl, setAnchorEl] = useState(null);
@@ -26,101 +28,30 @@ const UpdateVehicle = () => {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: currentYear - 1949 }, (_, i) => currentYear - i);
 
-  // Enhanced color palette with name and hex values - significantly expanded
+  // Enhanced color palette with name and hex values
   const colorPalette = [
-    // Standard colors
     { name: 'Black', value: '#000000' },
     { name: 'White', value: '#FFFFFF' },
     { name: 'Silver', value: '#C0C0C0' },
     { name: 'Gray', value: '#808080' },
-    { name: 'Dark Gray', value: '#404040' },
-    { name: 'Light Gray', value: '#D3D3D3' },
-    
-    // Reds
     { name: 'Red', value: '#FF0000' },
-    { name: 'Dark Red', value: '#8B0000' },
-    { name: 'Crimson', value: '#DC143C' },
-    { name: 'Maroon', value: '#800000' },
-    { name: 'Burgundy', value: '#800020' },
-    { name: 'Ruby Red', value: '#9B111E' },
-    { name: 'Cherry Red', value: '#C40233' },
-    { name: 'Rose Red', value: '#C21E56' },
-    
-    // Blues
     { name: 'Blue', value: '#0000FF' },
-    { name: 'Navy', value: '#000080' },
-    { name: 'Royal Blue', value: '#4169E1' },
-    { name: 'Sky Blue', value: '#87CEEB' },
-    { name: 'Turquoise', value: '#40E0D0' },
-    { name: 'Teal', value: '#008080' },
-    { name: 'Aqua', value: '#00FFFF' },
-    { name: 'Cobalt Blue', value: '#0047AB' },
-    { name: 'Steel Blue', value: '#4682B4' },
-    { name: 'Midnight Blue', value: '#191970' },
-    
-    // Greens
     { name: 'Green', value: '#008000' },
-    { name: 'Lime', value: '#00FF00' },
-    { name: 'Forest Green', value: '#228B22' },
-    { name: 'Olive', value: '#808000' },
-    { name: 'Dark Green', value: '#006400' },
-    { name: 'Emerald Green', value: '#50C878' },
-    { name: 'Mint Green', value: '#98FB98' },
-    { name: 'British Racing Green', value: '#004225' },
-    
-    // Yellows/Golds
     { name: 'Yellow', value: '#FFFF00' },
-    { name: 'Gold', value: '#FFD700' },
-    { name: 'Amber', value: '#FFBF00' },
-    { name: 'Khaki', value: '#F0E68C' },
-    { name: 'Mustard', value: '#FFDB58' },
-    { name: 'Lemon Yellow', value: '#FFF44F' },
-    
-    // Oranges/Browns
     { name: 'Orange', value: '#FFA500' },
-    { name: 'Burnt Orange', value: '#CC5500' },
-    { name: 'Coral', value: '#FF7F50' },
-    { name: 'Peach', value: '#FFDAB9' },
-    { name: 'Brown', value: '#A52A2A' },
-    { name: 'Bronze', value: '#CD7F32' },
-    { name: 'Copper', value: '#B87333' },
-    { name: 'Mahogany', value: '#C04000' },
-    { name: 'Tan', value: '#D2B48C' },
-    { name: 'Beige', value: '#F5F5DC' },
-    
-    // Purples/Pinks
     { name: 'Purple', value: '#800080' },
-    { name: 'Lavender', value: '#E6E6FA' },
-    { name: 'Violet', value: '#8F00FF' },
-    { name: 'Indigo', value: '#4B0082' },
-    { name: 'Lilac', value: '#C8A2C8' },
-    { name: 'Magenta', value: '#FF00FF' },
-    { name: 'Fuchsia', value: '#FF77FF' },
     { name: 'Pink', value: '#FFC0CB' },
-    { name: 'Hot Pink', value: '#FF69B4' },
-    { name: 'Rose Pink', value: '#FF66CC' },
-    
-    // Specialty automotive colors
-    { name: 'Pearl White', value: '#FAFAFA' },
-    { name: 'Metallic Silver', value: '#A8A9AD' },
-    { name: 'Titanium', value: '#878681' },
-    { name: 'Gunmetal', value: '#2C3539' },
-    { name: 'Charcoal', value: '#36454F' },
-    { name: 'Champagne', value: '#F7E7CE' },
-    { name: 'Racing Red', value: '#FF2800' },
-    { name: 'Electric Blue', value: '#7DF9FF' },
-    { name: 'Matte Black', value: '#1C1C1C' },
-    { name: 'Carbon Black', value: '#333333' },
-    { name: 'Ice Blue', value: '#99FFFF' },
-    { name: 'Sapphire Blue', value: '#0F52BA' },
-    { name: 'Oxford Blue', value: '#002147' }
+    { name: 'Brown', value: '#A52A2A' },
+    { name: 'Gold', value: '#FFD700' },
+    { name: 'Teal', value: '#008080' },
+    { name: 'Navy', value: '#000080' },
   ];
 
   useEffect(() => {
     const fetchVehicle = async () => {
       try {
         const response = await axios.get(`http://localhost:3001/vehicle/get-vehicle/${id}`);
-        const { registrationNumber, make, model, year, fuelType, vehicleType, color, status } = response.data;
+        const { registrationNumber, make, model, year, fuelType, vehicleType, color, mileage, lastServiceMileage, status } = response.data;
         setRegistrationNumber(registrationNumber);
         setMake(make);
         setModel(model);
@@ -128,6 +59,8 @@ const UpdateVehicle = () => {
         setFuelType(fuelType);
         setVehicleType(vehicleType);
         setColor(color);
+        setMileage(mileage);
+        setLastServiceMileage(lastServiceMileage);
         setStatus(status);
       } catch (error) {
         console.error(error);
@@ -147,13 +80,15 @@ const UpdateVehicle = () => {
       year,
       fuelType,
       vehicleType,
-      status
+      status,
+      mileage,
+      lastServiceMileage,
     };
     
     // Check if all required fields have values
     const valid = Object.values(requiredFields).every(field => field !== '');
     setIsFormValid(valid);
-  }, [registrationNumber, make, model, year, fuelType, vehicleType, status]);
+  }, [registrationNumber, make, model, year, fuelType, vehicleType, status, mileage, lastServiceMileage]);
 
   const handleFuelTypeChange = (event) => {
     setFuelType(event.target.value);
@@ -201,6 +136,8 @@ const UpdateVehicle = () => {
     if (!fuelType) newErrors.fuelType = "Fuel Type is required.";
     if (!vehicleType) newErrors.vehicleType = "Vehicle Type is required.";
     if (!status) newErrors.status = "Status is required.";
+    if (!mileage) newErrors.mileage = "Mileage is required.";
+    if (!lastServiceMileage) newErrors.lastServiceMileage = "Last Service Mileage is required.";
     return newErrors;
   };
 
@@ -220,11 +157,21 @@ const UpdateVehicle = () => {
       fuelType,
       vehicleType,
       color,
+      mileage,
+      lastServiceMileage,
       status,
     };
 
     try {
+      // Update the vehicle
       await axios.put(`http://localhost:3001/vehicle/update-vehicle/${id}`, updatedVehicle);
+
+      // Send notification about next service mileage
+      await axios.put(`http://localhost:3001/vehicle/update-vehicle-mileage/${id}`, {
+        mileage,
+        lastServiceMileage,
+      });
+
       swal("Success", "Vehicle updated successfully!", "success");
       navigate('/view-vehicle');
     } catch (error) {
@@ -298,7 +245,6 @@ const UpdateVehicle = () => {
                   error={!!errors.model}
                   required
                 />
-                {/* Year Picker instead of text field */}
                 <FormControl fullWidth margin="normal" variant="outlined" error={!!errors.year} required>
                   <InputLabel>Year</InputLabel>
                   <Select
@@ -342,26 +288,33 @@ const UpdateVehicle = () => {
                     <MenuItem value="Coupe">Coupe</MenuItem>
                     <MenuItem value="Van">Van</MenuItem>
                     <MenuItem value="Motorcycle">Motorcycle</MenuItem>
-                    <MenuItem value="Convertible">Convertible</MenuItem>
-                    <MenuItem value="Crossover">Crossover</MenuItem>
-                    <MenuItem value="Minivan">Minivan</MenuItem>
-                    <MenuItem value="Pickup Truck">Pickup Truck</MenuItem>
-                    <MenuItem value="Sports Car">Sports Car</MenuItem>
-                    <MenuItem value="Electric Vehicle">Electric Vehicle</MenuItem>
-                    <MenuItem value="Hybrid Vehicle">Hybrid Vehicle</MenuItem>
-                    <MenuItem value="Luxury Vehicle">Luxury Vehicle</MenuItem>
-                    <MenuItem value="Commercial Vehicle">Commercial Vehicle</MenuItem>
-                    <MenuItem value="Off-Road Vehicle">Off-Road Vehicle</MenuItem>
-                    <MenuItem value="Bus">Bus</MenuItem>
-                    <MenuItem value="RV (Recreational Vehicle)">RV (Recreational Vehicle)</MenuItem>
-                    <MenuItem value="Tractor">Tractor</MenuItem>
-                    <MenuItem value="Trailer">Trailer</MenuItem>
-                    <MenuItem value="Other">Other</MenuItem>
                   </Select>
                   <FormHelperText>{errors.vehicleType}</FormHelperText>
                 </FormControl>
-                
-                {/* Color Field with Enhanced Palette */}
+                <TextField
+                  fullWidth
+                  margin="normal"
+                  label="Mileage"
+                  variant="outlined"
+                  type="number"
+                  value={mileage}
+                  onChange={(e) => setMileage(e.target.value)}
+                  helperText={errors.mileage}
+                  error={!!errors.mileage}
+                  required
+                />
+                <TextField
+                  fullWidth
+                  margin="normal"
+                  label="Last Service Mileage"
+                  variant="outlined"
+                  type="number"
+                  value={lastServiceMileage}
+                  onChange={(e) => setLastServiceMileage(e.target.value)}
+                  helperText={errors.lastServiceMileage}
+                  error={!!errors.lastServiceMileage}
+                  required
+                />
                 <TextField
                   fullWidth
                   margin="normal"
@@ -386,7 +339,6 @@ const UpdateVehicle = () => {
                   helperText={errors.color}
                   error={!!errors.color}
                 />
-                
                 <Popover
                   id={id_popover}
                   open={open}
@@ -420,7 +372,6 @@ const UpdateVehicle = () => {
                     ))}
                   </Box>
                 </Popover>
-                
                 <FormControl fullWidth margin="normal" variant="outlined" error={!!errors.status} required>
                   <InputLabel>Status</InputLabel>
                   <Select

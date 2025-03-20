@@ -14,6 +14,7 @@ const AddOwner = () => {
   // State variables for form fields
   const [name, setName] = useState('');
   const [contact, setContact] = useState('');
+  const [email, setEmail] = useState(''); // Added state for email
   const [address, setAddress] = useState('');
   const [licenseNumber, setLicenseNumber] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
@@ -68,6 +69,7 @@ const AddOwner = () => {
     const requiredFields = {
       name,
       contact,
+      email, // Added email to required fields
       address,
       licenseNumber,
       dateOfBirth,
@@ -81,12 +83,18 @@ const AddOwner = () => {
     const hasVehicle = vehicleSelections.some(v => v.selectedVehicle !== '');
     
     setIsFormValid(valid && hasVehicle);
-  }, [name, contact, address, licenseNumber, dateOfBirth, gender, vehicleSelections]);
+  }, [name, contact, email, address, licenseNumber, dateOfBirth, gender, vehicleSelections]);
 
   // Validate contact number (10 digits)
   const validateContact = (value) => {
     const contactRegex = /^\d{10}$/;
     return contactRegex.test(value);
+  };
+
+  // Validate email
+  const validateEmail = (value) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(value);
   };
 
   // Validate Sri Lankan license number
@@ -114,6 +122,21 @@ const AddOwner = () => {
       }));
     } else {
       setErrors(prevErrors => ({ ...prevErrors, contact: '' }));
+    }
+  };
+
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setEmail(value);
+    
+    // Real-time validation for email
+    if (value && !validateEmail(value)) {
+      setErrors(prevErrors => ({ 
+        ...prevErrors, 
+        email: "Please enter a valid email address" 
+      }));
+    } else {
+      setErrors(prevErrors => ({ ...prevErrors, email: '' }));
     }
   };
 
@@ -197,8 +220,12 @@ const AddOwner = () => {
   const validateForm = () => {
     const newErrors = {};
     if (!name) newErrors.name = "Name is required.";
+    
     if (!contact) newErrors.contact = "Contact number is required.";
     else if (!validateContact(contact)) newErrors.contact = "Contact number must be 10 digits.";
+    
+    if (!email) newErrors.email = "Email address is required.";
+    else if (!validateEmail(email)) newErrors.email = "Please enter a valid email address.";
     
     if (!address) newErrors.address = "Address is required.";
     
@@ -248,6 +275,7 @@ const AddOwner = () => {
       owner_id: ownerId,
       name,
       contact,
+      email, // Added email to the payload
       address,
       license_number: licenseNumber,
       date_of_birth: formattedDOB,
@@ -273,6 +301,7 @@ const AddOwner = () => {
       // Reset form fields but keep the owner ID
       setName('');
       setContact('');
+      setEmail(''); // Reset email field
       setAddress('');
       setLicenseNumber('');
       setDateOfBirth('');
@@ -305,6 +334,11 @@ const AddOwner = () => {
           setErrors(prevErrors => ({ 
             ...prevErrors, 
             licenseNumber: "This license number is already registered" 
+          }));
+        } else if (error.response.data.message.includes("email")) {
+          setErrors(prevErrors => ({ 
+            ...prevErrors, 
+            email: "This email address is already registered" 
           }));
         }
       } else {
@@ -397,6 +431,20 @@ const AddOwner = () => {
                   onChange={handleContactChange}
                   helperText={errors.contact}
                   error={!!errors.contact}
+                  required
+                />
+                
+                {/* Added Email Field */}
+                <TextField
+                  fullWidth
+                  margin="normal"
+                  label="Email Address"
+                  variant="outlined"
+                  type="email"
+                  value={email}
+                  onChange={handleEmailChange}
+                  helperText={errors.email}
+                  error={!!errors.email}
                   required
                 />
                 

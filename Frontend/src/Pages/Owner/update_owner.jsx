@@ -19,6 +19,7 @@ const UpdateOwner = () => {
   const [ownerId, setOwnerId] = useState('');
   const [name, setName] = useState('');
   const [contact, setContact] = useState('');
+  const [email, setEmail] = useState(''); // Added email state
   const [address, setAddress] = useState('');
   const [licenseNumber, setLicenseNumber] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
@@ -47,77 +48,47 @@ const UpdateOwner = () => {
   }, [id]);
   
   // Fetch owner data including their vehicles
-// In your fetchOwner function in UpdateOwner.js
-const fetchOwner = async () => {
-  try {
-    const response = await axios.get(`http://localhost:3001/owner/get-owner/${id}`);
-    const ownerData = response.data;
-    
-    setOwnerId(ownerData.owner_id);
-    setName(ownerData.name);
-    setContact(ownerData.contact);
-    setAddress(ownerData.address);
-    setLicenseNumber(ownerData.license_number);
-    
-    // Format date from ISO to YYYY-MM-DD for the date input
-    const dobDate = new Date(ownerData.date_of_birth);
-    const formattedDOB = dobDate.toISOString().split('T')[0];
-    setDateOfBirth(formattedDOB);
-    
-    setGender(ownerData.gender);
-    
-    // If owner has vehicles, set up the vehicle selection
-    if (ownerData.vehicles && ownerData.vehicles.length > 0) {
-      // Store the vehicle IDs in selectedVehicles state
-      setSelectedVehicles(ownerData.vehicles);
+  const fetchOwner = async () => {
+    try {
+      const response = await axios.get(`http://localhost:3001/owner/get-owner/${id}`);
+      const ownerData = response.data;
       
-      // Initialize vehicle selections with owner's vehicles
-      const initialSelections = ownerData.vehicles.map(vehicleId => ({
-        selectedVehicle: vehicleId
-      }));
-      setVehicleSelections(initialSelections);
+      setOwnerId(ownerData.owner_id);
+      setName(ownerData.name);
+      setContact(ownerData.contact);
+      setEmail(ownerData.email); // Set email from owner data
+      setAddress(ownerData.address);
+      setLicenseNumber(ownerData.license_number);
+      
+      // Format date from ISO to YYYY-MM-DD for the date input
+      const dobDate = new Date(ownerData.date_of_birth);
+      const formattedDOB = dobDate.toISOString().split('T')[0];
+      setDateOfBirth(formattedDOB);
+      
+      setGender(ownerData.gender);
+      
+      // If owner has vehicles, set up the vehicle selection
+      if (ownerData.vehicles && ownerData.vehicles.length > 0) {
+        // Store the vehicle IDs in selectedVehicles state
+        setSelectedVehicles(ownerData.vehicles);
+        
+        // Initialize vehicle selections with owner's vehicles
+        const initialSelections = ownerData.vehicles.map(vehicleId => ({
+          selectedVehicle: vehicleId
+        }));
+        setVehicleSelections(initialSelections);
+      }
+    } catch (error) {
+      console.error(error);
+      swal("Error", "Failed to fetch owner data.", "error");
     }
-  } catch (error) {
-    console.error(error);
-    swal("Error", "Failed to fetch owner data.", "error");
-  }
-};
+  };
 
-// Add this function to get vehicle details by ID
-const getVehicleDetailsFromId = (vehicleId) => {
-  // Find the vehicle in allVehicles array
-  return allVehicles.find(vehicle => vehicle._id === vehicleId);
-};
-
-// Then in your render section, modify the Selected Vehicles Summary section:
-{/* Selected Vehicles Summary */}
-{selectedVehicles.length > 0 && (
-  <Paper style={{ padding: '15px', marginTop: '20px' }}>
-    <Typography variant="subtitle1" gutterBottom>
-      Selected Vehicles ({selectedVehicles.length}):
-    </Typography>
-    <Box display="flex" flexWrap="wrap">
-      {selectedVehicles.map(vehicleId => {
-        const vehicle = getVehicleDetailsFromId(vehicleId);
-        return vehicle ? (
-          <Chip
-            key={vehicleId}
-            label={`${vehicle.make} ${vehicle.model} (${vehicle.registrationNumber})`}
-            color="primary"
-            style={{ margin: '4px' }}
-          />
-        ) : (
-          <Chip
-            key={vehicleId}
-            label={`Loading vehicle details...`}
-            color="default"
-            style={{ margin: '4px' }}
-          />
-        );
-      })}
-    </Box>
-  </Paper>
-)}
+  // Add this function to get vehicle details by ID
+  const getVehicleDetailsFromId = (vehicleId) => {
+    // Find the vehicle in allVehicles array
+    return allVehicles.find(vehicle => vehicle._id === vehicleId);
+  };
 
   // Fetch available vehicles from the API
   const fetchVehicles = async () => {
@@ -137,6 +108,7 @@ const getVehicleDetailsFromId = (vehicleId) => {
     const requiredFields = {
       name,
       contact,
+      email, // Added email to required fields
       address,
       licenseNumber,
       dateOfBirth,
@@ -150,12 +122,18 @@ const getVehicleDetailsFromId = (vehicleId) => {
     const hasVehicle = vehicleSelections.some(v => v.selectedVehicle !== '');
     
     setIsFormValid(valid && hasVehicle);
-  }, [name, contact, address, licenseNumber, dateOfBirth, gender, vehicleSelections]);
+  }, [name, contact, email, address, licenseNumber, dateOfBirth, gender, vehicleSelections]); // Added email to dependencies
 
   // Validate contact number (10 digits)
   const validateContact = (value) => {
     const contactRegex = /^\d{10}$/;
     return contactRegex.test(value);
+  };
+
+  // Validate email
+  const validateEmail = (value) => {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(value);
   };
 
   // Validate Sri Lankan license number
@@ -182,6 +160,22 @@ const getVehicleDetailsFromId = (vehicleId) => {
       }));
     } else {
       setErrors(prevErrors => ({ ...prevErrors, contact: '' }));
+    }
+  };
+
+  // Handle email change with validation
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setEmail(value);
+    
+    // Real-time validation for email
+    if (value && !validateEmail(value)) {
+      setErrors(prevErrors => ({ 
+        ...prevErrors, 
+        email: "Please enter a valid email address" 
+      }));
+    } else {
+      setErrors(prevErrors => ({ ...prevErrors, email: '' }));
     }
   };
 
@@ -267,8 +261,12 @@ const getVehicleDetailsFromId = (vehicleId) => {
   const validateForm = () => {
     const newErrors = {};
     if (!name) newErrors.name = "Name is required.";
+    
     if (!contact) newErrors.contact = "Contact number is required.";
     else if (!validateContact(contact)) newErrors.contact = "Contact number must be 10 digits.";
+    
+    if (!email) newErrors.email = "Email is required.";
+    else if (!validateEmail(email)) newErrors.email = "Please enter a valid email address.";
     
     if (!address) newErrors.address = "Address is required.";
     
@@ -321,6 +319,7 @@ const getVehicleDetailsFromId = (vehicleId) => {
       owner_id: ownerId,
       name,
       contact,
+      email, // Include email in the update payload
       address,
       license_number: licenseNumber,
       date_of_birth: formattedDOB,
@@ -370,6 +369,11 @@ const getVehicleDetailsFromId = (vehicleId) => {
           setErrors(prevErrors => ({ 
             ...prevErrors, 
             licenseNumber: "This license number is already registered" 
+          }));
+        } else if (error.response.data.message.includes("email")) {
+          setErrors(prevErrors => ({ 
+            ...prevErrors, 
+            email: "This email is already registered" 
           }));
         }
       } else {
@@ -462,6 +466,20 @@ const getVehicleDetailsFromId = (vehicleId) => {
                   onChange={handleContactChange}
                   helperText={errors.contact}
                   error={!!errors.contact}
+                  required
+                />
+                
+                {/* Added Email Field */}
+                <TextField
+                  fullWidth
+                  margin="normal"
+                  label="Email Address"
+                  variant="outlined"
+                  type="email"
+                  value={email}
+                  onChange={handleEmailChange}
+                  helperText={errors.email}
+                  error={!!errors.email}
                   required
                 />
                 

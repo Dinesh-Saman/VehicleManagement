@@ -30,6 +30,9 @@ router.put('/update-vehicle-owner/:id', vehicleController.updateVehicleOwner);
 router.get('/get-vehicles-by-owner/:ownerId', vehicleController.getVehiclesByOwner);
 router.put('/remove-vehicle-owner/:ownerId', vehicleController.removeVehicleOwner);
 
+// Update vehicle mileage and notify owner
+router.put('/update-vehicle-mileage/:id', vehicleController.updateVehicleMileage);
+
 router.get('/check-vehicles/:id', ownerController.checkOwnerVehicles);
 
 module.exports = router;

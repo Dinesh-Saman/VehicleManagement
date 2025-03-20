@@ -3,10 +3,10 @@ const Owner = require("../models/ownerModel");
 const Vehicle = require("../models/vehicleModel");
 const mongoose = require('mongoose'); // Import mongoose for ObjectId validation
 
-// Add a new owner
+// Add a new owner with email notification
 exports.addNewOwner = async (req, res) => {
     try {
-        const { owner_id, name, contact, address, license_number, date_of_birth, gender, vehicles } = req.body;
+        const { owner_id, name, contact, email, address, license_number, date_of_birth, gender, vehicles } = req.body;
 
         // Log the received data for debugging
         console.log(req.body);
@@ -18,6 +18,7 @@ exports.addNewOwner = async (req, res) => {
         if (!owner_id) missingFields.push("owner_id");
         if (!name) missingFields.push("name");
         if (!contact) missingFields.push("contact");
+        if (!email) missingFields.push("email");
         if (!address) missingFields.push("address");
         if (!license_number) missingFields.push("license_number");
         if (!date_of_birth) missingFields.push("date_of_birth");
@@ -49,6 +50,15 @@ exports.addNewOwner = async (req, res) => {
             });
         }
 
+        // Check if an owner with the same email already exists
+        const existingOwnerByEmail = await Owner.findOne({ email });
+        if (existingOwnerByEmail) {
+            return res.status(409).json({ 
+                message: "An owner with this email already exists",
+                email
+            });
+        }
+
         // Check if an owner with the same license number already exists
         const existingOwnerByLicense = await Owner.findOne({ license_number });
         if (existingOwnerByLicense) {
@@ -63,6 +73,7 @@ exports.addNewOwner = async (req, res) => {
             owner_id,
             name,
             contact,
+            email,
             address,
             license_number,
             date_of_birth,
@@ -70,12 +81,70 @@ exports.addNewOwner = async (req, res) => {
             vehicles // Include vehicles array
         });
 
+        // Save the new owner
         await newOwner.save();
+        
+        // Send welcome email notification to the new owner
+        const welcomeMessage = `
+            Welcome to our Vehicle Management System, ${name}!
+            
+            Your account has been successfully created with the following details:
+            - Owner ID: ${owner_id}
+            - License Number: ${license_number}
+            
+            You can now log in to our system to manage your vehicles and view service records.
+            
+            If you have any questions or need assistance, please don't hesitate to contact our support team.
+        `;
+        
+        // If you've moved sendEmailNotification to a utility file, use it directly
+        // Otherwise, you can define it here or import it from vehicleController
+        sendEmailNotification(email, welcomeMessage);
+        
         res.status(201).json({ message: "New owner added successfully!" });
     } catch (err) {
         console.error(err); // Log error for debugging
         res.status(500).json({ message: err.message });
     }
+};
+
+// Define the sendEmailNotification function here if not moving to a utility file
+// This is a copy of the function from the vehicleController
+const sendEmailNotification = (email, message) => {
+    const nodemailer = require('nodemailer');
+    
+    // Create a transporter object using a service (Gmail in this example)
+    const transporter = nodemailer.createTransport({
+        service: 'gmail', // Uses predefined settings for Gmail
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_APP_PASSWORD
+        }
+    });
+    
+    // Define email options
+    const mailOptions = {
+        from: process.env.EMAIL_FROM || 'Vehicle Management System <noreply@example.com>',
+        to: email,
+        subject: 'Welcome to Vehicle Management System',
+        text: message,
+        html: `<div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+            <h2 style="color: #333;">Welcome to Vehicle Management System</h2>
+            <p style="font-size: 16px;">${message.replace(/\n/g, '<br>')}</p>
+            <p style="font-size: 14px; color: #666; margin-top: 20px;">
+                This is an automated message from the Vehicle Management System.
+            </p>
+        </div>`
+    };
+    
+    // Send the email
+    transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+            console.error('Error sending email:', error);
+        } else {
+            console.log('Email sent successfully:', info.response);
+        }
+    });
 };
 
 // Delete an owner
@@ -130,10 +199,10 @@ exports.getOwnerByOwnerId = async (req, res) => {
 
 exports.updateOwner = async (req, res) => {
     const ownerId = req.params.id;
-    const { owner_id, name, contact, address, license_number, date_of_birth, gender, vehicles } = req.body;
+    const { owner_id, name, contact, email, address, license_number, date_of_birth, gender, vehicles } = req.body;
 
     // Validate inputs
-    if (!(owner_id && name && contact && address && license_number && date_of_birth && gender)) {
+    if (!(owner_id && name && contact && email && address && license_number && date_of_birth && gender)) {
         return res.status(400).send({ message: "All required inputs are missing" });
     }
 
@@ -176,6 +245,19 @@ exports.updateOwner = async (req, res) => {
             });
         }
 
+        // Check if another owner with the same email already exists (excluding current owner)
+        const existingOwnerByEmail = await Owner.findOne({ 
+            email, 
+            _id: { $ne: ownerId } 
+        });
+        
+        if (existingOwnerByEmail) {
+            return res.status(409).json({ 
+                message: "Another owner with this email already exists",
+                email
+            });
+        }
+
         // Check if another owner with the same license number already exists (excluding current owner)
         const existingOwnerByLicense = await Owner.findOne({ 
             license_number, 
@@ -196,6 +278,7 @@ exports.updateOwner = async (req, res) => {
                 owner_id,
                 name,
                 contact,
+                email,
                 address,
                 license_number,
                 date_of_birth,

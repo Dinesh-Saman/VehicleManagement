@@ -13,6 +13,8 @@ const AddVehicle = () => {
   const [fuelType, setFuelType] = useState('');
   const [vehicleType, setVehicleType] = useState('');
   const [color, setColor] = useState('');
+  const [mileage, setMileage] = useState('0');
+  const [lastServiceMileage, setLastServiceMileage] = useState('0');
   const [status, setStatus] = useState('Active');
   const [errors, setErrors] = useState({});
   const [anchorEl, setAnchorEl] = useState(null);
@@ -149,6 +151,22 @@ const AddVehicle = () => {
     setErrors(prevErrors => ({ ...prevErrors, year: '' }));
   };
 
+  const handleMileageChange = (event) => {
+    const value = event.target.value;
+    if (value === '' || (!isNaN(value) && parseInt(value) >= 0)) {
+      setMileage(value);
+      setErrors(prevErrors => ({ ...prevErrors, mileage: '' }));
+    }
+  };
+
+  const handleLastServiceMileageChange = (event) => {
+    const value = event.target.value;
+    if (value === '' || (!isNaN(value) && parseInt(value) >= 0)) {
+      setLastServiceMileage(value);
+      setErrors(prevErrors => ({ ...prevErrors, lastServiceMileage: '' }));
+    }
+  };
+
   const handleColorClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -175,6 +193,22 @@ const AddVehicle = () => {
     if (!fuelType) newErrors.fuelType = "Fuel Type is required.";
     if (!vehicleType) newErrors.vehicleType = "Vehicle Type is required.";
     if (!status) newErrors.status = "Status is required.";
+    
+    // Validate mileage is a non-negative number
+    if (mileage !== '' && (isNaN(mileage) || parseInt(mileage) < 0)) {
+      newErrors.mileage = "Mileage must be a non-negative number.";
+    }
+    
+    // Validate last service mileage is a non-negative number
+    if (lastServiceMileage !== '' && (isNaN(lastServiceMileage) || parseInt(lastServiceMileage) < 0)) {
+      newErrors.lastServiceMileage = "Last service mileage must be a non-negative number.";
+    }
+    
+    // Validate last service mileage doesn't exceed current mileage
+    if (parseInt(lastServiceMileage) > parseInt(mileage)) {
+      newErrors.lastServiceMileage = "Last service mileage cannot exceed current mileage.";
+    }
+    
     return newErrors;
   };
 
@@ -190,10 +224,12 @@ const AddVehicle = () => {
       registrationNumber,
       make,
       model,
-      year,
+      year: parseInt(year),
       fuelType,
       vehicleType,
       color,
+      mileage: parseInt(mileage),
+      lastServiceMileage: parseInt(lastServiceMileage),
       status,
     };
 
@@ -207,6 +243,8 @@ const AddVehicle = () => {
       setFuelType('');
       setVehicleType('');
       setColor('');
+      setMileage('0');
+      setLastServiceMileage('0');
       setStatus('Active');
       setErrors({});
     } catch (error) {
@@ -364,6 +402,34 @@ const AddVehicle = () => {
                 </Select>
                 <FormHelperText>{errors.vehicleType}</FormHelperText>
                 </FormControl>
+                
+                {/* Mileage Field */}
+                <TextField
+                  fullWidth
+                  margin="normal"
+                  label="Current Mileage"
+                  variant="outlined"
+                  value={mileage}
+                  onChange={handleMileageChange}
+                  helperText={errors.mileage || "The vehicle's current mileage (in kilometers/miles)"}
+                  error={!!errors.mileage}
+                  type="number"
+                  InputProps={{ inputProps: { min: 0 } }}
+                />
+                
+                {/* Last Service Mileage Field */}
+                <TextField
+                  fullWidth
+                  margin="normal"
+                  label="Last Service Mileage"
+                  variant="outlined"
+                  value={lastServiceMileage}
+                  onChange={handleLastServiceMileageChange}
+                  helperText={errors.lastServiceMileage || "The vehicle's mileage at last service (in kilometers/miles)"}
+                  error={!!errors.lastServiceMileage}
+                  type="number"
+                  InputProps={{ inputProps: { min: 0 } }}
+                />
                 
                 {/* Color Field with Enhanced Palette */}
                 <TextField

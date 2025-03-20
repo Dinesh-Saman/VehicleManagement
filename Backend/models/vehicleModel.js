@@ -1,4 +1,3 @@
-// models/vehicleModel.js
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
@@ -35,6 +34,18 @@ const vehicleSchema = new Schema({
   color: {
     type: String,
     required: false, 
+  },
+  mileage: {
+    type: Number,
+    required: false,
+    min: 0,
+    default: 0
+  },
+  lastServiceMileage: {
+    type: Number,
+    required: false,
+    min: 0,
+    default: 0
   },
   status: {
     type: String,
