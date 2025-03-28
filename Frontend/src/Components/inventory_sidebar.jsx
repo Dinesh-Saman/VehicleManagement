@@ -7,7 +7,6 @@ import {
   FaBoxes, FaWarehouse, FaClipboardList, FaUsers,
   FaTools, FaShoppingCart, FaExchangeAlt, FaHistory
 } from 'react-icons/fa';
-import Logo from '../Images/logo.png';
 import { Dashboard } from '@material-ui/icons';
 
 // Styled components

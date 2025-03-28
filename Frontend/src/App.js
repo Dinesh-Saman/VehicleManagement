@@ -25,6 +25,12 @@ import InventoryReportPage from './Pages/Inventory/inventory_report';
 import InventoryAnalysis from './Pages/Inventory/analysis_report';
 import OwnerDashboard from './Pages/Owner/dashboard';
 import InventoryDashboard from './Pages/Inventory/dashboard';
+import AddServiceReminder from './Pages/ServiceReminder/add_service_reminder';
+import ViewServiceReminder from './Pages/ServiceReminder/view_service_reminders';
+import UpdateServiceReminder from './Pages/ServiceReminder/update_service_reminder';
+import ServiceReminderReportPage from './Pages/ServiceReminder/service_reminder_report';
+import ServiceReminderAnalysisReport from './Pages/ServiceReminder/analysis_report';
+import ServiceReminderDashboard from './Pages/ServiceReminder/dashboard';
 
 function App() {
   return (
@@ -59,6 +65,13 @@ function App() {
           <Route path="/inventory-management" element={<OwnerManagementDashboard />} />
           <Route path="/inventory-dashboard" element={<InventoryDashboard />} />
           <Route path="/inventory-analysis-report" element={<InventoryAnalysis />} />
+
+          <Route path="/add-service-reminder" element={<AddServiceReminder />} />
+          <Route path="/view-service-reminder" element={<ViewServiceReminder />} />
+          <Route path="/update-service-reminder/:id" element={<UpdateServiceReminder />} />
+          <Route path="/service-reminder-report" element={<ServiceReminderReportPage />} />
+          <Route path="/service-reminder-dashboard" element={<ServiceReminderDashboard />} />
+          <Route path="/service-reminder-analysis-report" element={<ServiceReminderAnalysisReport />} />
         </Routes>
         <Footer></Footer>
       </div>

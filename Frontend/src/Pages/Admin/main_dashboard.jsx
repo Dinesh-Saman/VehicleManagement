@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Typography } from '@material-ui/core';
-import Header from '../../Components/navbar';
+import Header from '../../Components/main_navbar';
 import { useNavigate } from 'react-router-dom';
 
 const DashboardContainer = styled.div`
@@ -17,7 +17,6 @@ const MainSection = styled.div`
 const MainContent = styled.div`
   flex-grow: 1;
   padding: 20px;
-  margin-top: 70px;
 `;
 
 const CardContainer = styled.div`
@@ -31,9 +30,9 @@ const CardContainer = styled.div`
 const Card = styled.div`
   background-color: #fff;
   flex: 1;
-  min-width: 200px;
-  max-width: 300px;
-  height: 250px; /* Increased height to accommodate illustrations */
+  min-width: 250px;
+  max-width: 350px;
+  height: 500px;
   border-radius: 10px;
   display: flex;
   flex-direction: column;
@@ -43,6 +42,7 @@ const Card = styled.div`
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
+  overflow: hidden;
 
   &:hover {
     transform: translateY(-5px);
@@ -51,17 +51,17 @@ const Card = styled.div`
 `;
 
 const IllustrationContainer = styled.div`
-  margin-bottom: 15px;
-  width: 200px; /* Adjust size as needed */
-  height: 200px; /* Adjust size as needed */
+  width: 100%;
+  height: 450px;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 
   img {
-    width: 120%;
-    height: 120%;
-    object-fit: contain;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 `;
 
@@ -69,33 +69,33 @@ const CardTitle = styled.div`
   font-size: 20px;
   font-weight: bold;
   text-align: center;
-  margin-bottom: 40px;
+  padding: 15px;
 `;
 
 const MainDashboard = () => {
   const navigate = useNavigate();
 
-  // Card data with external image URLs
+  // Card data with full image URLs
   const cards = [
     {
       title: 'Vehicle Management',
-      illustration: 'https://png.pngtree.com/background/20220714/original/pngtree-big-isolated-vehicle-vector-colorful-icons-flat-illustrations-of-delivery-by-picture-image_1607668.jpg', // Replace with your image URL
+      illustration: 'https://img.freepik.com/free-photo/back-view-grey-car-standing-bridge_114579-4084.jpg?uid=R129411847&ga=GA1.1.1390875937.1743015419&semt=ais_hybrid',
       path: '/vehicle-dashboard',
     },
     {
       title: 'Owner Management',
-      illustration: 'https://img.freepik.com/premium-vector/professional-car-salesman-vector-design-illustration_1138841-28919.jpg', // Replace with your image URL
+      illustration: 'https://img.freepik.com/free-photo/person-traveling-by-electric-car_23-2149362849.jpg?uid=R129411847&ga=GA1.1.1390875937.1743015419&semt=ais_hybrid',
       path: '/owner-dashboard',
     },
     {
       title: 'Inventory Management',
-      illustration: 'https://media.licdn.com/dms/image/v2/D4D12AQGJp3926DUjAw/article-cover_image-shrink_600_2000/article-cover_image-shrink_600_2000/0/1700577262165?e=2147483647&v=beta&t=5q3FIE9dikbrleHTUCU4ck5UMckNfM9db76DoFtK0oE', // Replace with your image URL
+      illustration: 'https://img.freepik.com/free-photo/young-man-working-warehouse_23-2149128345.jpg?uid=R129411847&ga=GA1.1.1390875937.1743015419&semt=ais_hybrid',
       path: '/inventory-dashboard',
     },
     {
       title: 'Service Reminder & Modifier',
-      illustration: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRHWUqGC6ehSAoUKk58FAPW8UNOzFBwpeC3w&s', // Replace with your image URL
-      path: '/gps-tracking',
+      illustration: 'https://img.freepik.com/free-photo/close-up-delivery-man-checking-trip-details-phone_23-2148944603.jpg?uid=R129411847&ga=GA1.1.1390875937.1743015419&semt=ais_hybrid',
+      path: '/service-reminder-dashboard',
     },
   ];
 
@@ -104,18 +104,14 @@ const MainDashboard = () => {
       <Header /> 
       <MainSection>
         <MainContent>
-          <Typography variant="h4" gutterBottom style={{ marginBottom: '20px', fontFamily: 'cursive', fontWeight: 'bold', color: 'purple', textAlign: 'center' }}>
-            Main Dashboard
-          </Typography>
-
           {/* Card Views for Navigation */}
           <CardContainer>
             {cards.map((card, index) => (
-              <Card key={index} onClick={() => navigate(card.path)}>
+              <Card key={index} onClick={() => navigate(card.path)}  style={{backgroundColor:'cyan'}}>
+               <CardTitle>{card.title}</CardTitle>
                 <IllustrationContainer>
                   <img src={card.illustration} alt={card.title} />
                 </IllustrationContainer>
-                <CardTitle>{card.title}</CardTitle>
               </Card>
             ))}
           </CardContainer>

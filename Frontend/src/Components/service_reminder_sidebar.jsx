@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { 
   FaTachometerAlt, FaCar, FaPlusCircle, 
-  FaFileAlt, FaChartLine, FaSignOutAlt, FaHome 
+  FaFileAlt, FaChartLine, FaSignOutAlt, FaHome,
+  FaBoxes, FaWarehouse, FaClipboardList, FaUsers,
+  FaTools, FaShoppingCart, FaExchangeAlt, FaHistory
 } from 'react-icons/fa';
 import { Dashboard } from '@material-ui/icons';
 
@@ -83,49 +85,44 @@ const SignOutContainer = styled.div`
 const Sidebar = () => {
   return (
     <SidebarContainer>
-      <LogoContainer>
-        <LogoImage style={{ width: '180px' }} />
-      </LogoContainer>
       <Menu>
-        <Link to="/owner-dashboard" style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Link to="/service-reminder-dashboard" style={{ textDecoration: 'none', color: 'inherit' }}>
           <MenuItem>
             <Icon><FaTachometerAlt /></Icon>
             Dashboard
           </MenuItem>
         </Link>
-        <Link to="/view-owner" style={{ textDecoration: 'none', color: 'inherit' }}>
+        
+        <Link to="/view-service-reminder" style={{ textDecoration: 'none', color: 'inherit' }}>
           <MenuItem>
-            <Icon><FaCar /></Icon>
-            View Owners
+            <Icon><FaBoxes /></Icon>
+            View Service Reminders
           </MenuItem>
         </Link>
-        <Link to="/add-owner" style={{ textDecoration: 'none', color: 'inherit' }}>
+        
+        <Link to="/add-service-reminder" style={{ textDecoration: 'none', color: 'inherit' }}>
           <MenuItem>
             <Icon><FaPlusCircle /></Icon>
-            Add Owner
+            Add Service Reminder
           </MenuItem>
         </Link>
-        <Link to="/owner-report" style={{ textDecoration: 'none', color: 'inherit' }}>
+        
+        <Link to="/service-reminder-report" style={{ textDecoration: 'none', color: 'inherit' }}>
           <MenuItem>
             <Icon><FaFileAlt /></Icon>
-            Owner Report
+            Service Reminder Report
           </MenuItem>
         </Link>
-        <Link to="/owner-analysis-report" style={{ textDecoration: 'none', color: 'inherit' }}>
+        
+        <Link to="/service-reminder-analysis-report" style={{ textDecoration: 'none', color: 'inherit' }}>
           <MenuItem>
             <Icon><FaChartLine /></Icon>
             Analysis Report
           </MenuItem>
         </Link>
-        <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-          <MenuItem>
-            <Icon><FaHome /></Icon>
-            Home
-          </MenuItem>
-        </Link>
         <Link to="/main-dashboard" style={{ textDecoration: 'none', color: 'inherit' }}>
           <MenuItem>
-            <Icon><Dashboard /></Icon>
+            <Icon><Dashboard/></Icon>
             Main Dashboard
           </MenuItem>
         </Link>

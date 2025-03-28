@@ -12,6 +12,7 @@ const VehicleRoutes = require("./routes/vehicleRoute");
 const OwnerRoutes = require("./routes/ownerRoute");
 const UserRoutes = require("./routes/userRoute");
 const InventoryRoutes = require("./routes/inventoryRoute");
+const ServiceReminderRoutes = require("./routes/reminderRoute");
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use("/vehicle", VehicleRoutes);
 app.use("/owner", OwnerRoutes);  
 app.use("/admin", UserRoutes);  
 app.use("/inventory", InventoryRoutes);  
+app.use("/service-reminder", ServiceReminderRoutes);  
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

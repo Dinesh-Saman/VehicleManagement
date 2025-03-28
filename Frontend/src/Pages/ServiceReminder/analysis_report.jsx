@@ -1,100 +1,95 @@
 import React, { useEffect, useState, useRef } from 'react';
-import Sidebar from '../../Components/owner_sidebar';
-import Header from '../../Components/owner_navbar';
+import Sidebar from '../../Components/service_reminder_sidebar';
+import Header from '../../Components/reminder_navbar';
 import axios from 'axios';
 import html2canvas from 'html2canvas';
 import {
   Box,
   Typography,
+  Paper,
   Button
 } from '@material-ui/core';
 import jsPDF from 'jspdf';
-import letterheadImage from '../../Images/owner_letterhead.png';
-import { FaMale, FaFemale, FaIdCard } from 'react-icons/fa';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
+import letterheadImage from '../../Images/service_letterhead.png';
+import { 
+  FaWrench, 
+  FaClock, 
+  FaCheckCircle, 
+  FaExclamationTriangle 
+} from 'react-icons/fa';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  PieChart, 
+  Pie, 
+  Cell 
+} from 'recharts';
 
-const OwnerReportPage = () => {
-  const [owners, setOwners] = useState([]);
+const ServiceReminderReportPage = () => {
+  const [reminders, setReminders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [genderCounts, setGenderCounts] = useState([]);
-  const [ageGroupCounts, setAgeGroupCounts] = useState([]);
-  const [totalOwners, setTotalOwners] = useState(0);
+  const [serviceTypeCounts, setServiceTypeCounts] = useState([]);
+  const [statusCounts, setStatusCounts] = useState({});
+  const [totalReminders, setTotalReminders] = useState(0);
+  const [overdueReminders, setOverdueReminders] = useState(0);
   const reportRef = useRef(null);
 
   useEffect(() => {
-    const fetchOwnerData = async () => {
+    const fetchServiceReminderData = async () => {
       try {
-        // Fetch all owners
-        const ownersResponse = await axios.get('http://localhost:3001/owner/get-owners');
-        const ownersData = ownersResponse.data;
-        setOwners(ownersData);
-        setTotalOwners(ownersData.length);
+        // Fetch all service reminders
+        const remindersResponse = await axios.get('http://localhost:3001/service-reminder/get-reminders');
+        setReminders(remindersResponse.data);
+        setTotalReminders(remindersResponse.data.length);
 
-        // Calculate gender distribution
-        const genderData = calculateGenderDistribution(ownersData);
-        setGenderCounts(genderData);
+        // Fetch service type counts
+        const typeResponse = await axios.get('http://localhost:3001/service-reminder/service-type-counts');
+        setServiceTypeCounts(typeResponse.data);
 
-        // Calculate age group distribution
-        const ageData = calculateAgeGroupDistribution(ownersData);
-        setAgeGroupCounts(ageData);
+        // Fetch status counts
+        const statusResponse = await axios.get('http://localhost:3001/service-reminder/service-status-counts');
+        setStatusCounts(statusResponse.data);
+
+        // Fetch overdue reminders
+        const overdueResponse = await axios.get('http://localhost:3001/service-reminder/overdue-details');
+        setOverdueReminders(overdueResponse.data.length);
 
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching owner data:', error);
-        setError('Failed to load owner data.');
+        console.error('Error fetching service reminder data:', error);
+        setError('Failed to load service reminder data.');
         setLoading(false);
       }
     };
 
-    fetchOwnerData();
+    fetchServiceReminderData();
   }, []);
 
-  // Calculate gender distribution
-  const calculateGenderDistribution = (ownersData) => {
-    const genderMap = ownersData.reduce((acc, owner) => {
-      acc[owner.gender] = (acc[owner.gender] || 0) + 1;
-      return acc;
-    }, {});
-
-    return Object.keys(genderMap).map(gender => ({
-      gender,
-      count: genderMap[gender]
+  // Helper function to safely get service type counts
+  const getServiceTypeCounts = () => {
+    return Object.entries(serviceTypeCounts).map(([serviceType, count]) => ({
+      serviceType,
+      count
     }));
   };
 
-  // Calculate age group distribution
-  const calculateAgeGroupDistribution = (ownersData) => {
-    const ageGroups = {
-      'Under 25': 0,
-      '25-35': 0,
-      '36-45': 0,
-      '46-60': 0,
-      'Over 60': 0
-    };
-
-    ownersData.forEach(owner => {
-      const birthDate = new Date(owner.date_of_birth);
-      const today = new Date();
-      const age = today.getFullYear() - birthDate.getFullYear();
-      
-      if (age < 25) ageGroups['Under 25']++;
-      else if (age >= 25 && age <= 35) ageGroups['25-35']++;
-      else if (age >= 36 && age <= 45) ageGroups['36-45']++;
-      else if (age >= 46 && age <= 60) ageGroups['46-60']++;
-      else ageGroups['Over 60']++;
-    });
-
-    return Object.keys(ageGroups).map(ageGroup => ({
-      ageGroup,
-      count: ageGroups[ageGroup]
+  // Helper function to safely get status counts
+  const getStatusCounts = () => {
+    return Object.entries(statusCounts).map(([name, value]) => ({
+      name,
+      value
     }));
   };
 
   const handleDownload = async () => {
     if (!reportRef.current) return;
     
-    // Hide the download button before capturing
     const downloadButton = document.getElementById('download-button');
     if (downloadButton) {
       downloadButton.style.display = 'none';
@@ -109,25 +104,21 @@ const OwnerReportPage = () => {
         letterRendering: true
       });
       
-      // Restore the download button
       if (downloadButton) {
         downloadButton.style.display = 'inline-flex';
       }
       
       const imgData = canvas.toDataURL('image/png');
       
-      // Calculate dimensions
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
+      const imgWidth = 210;
+      const pageHeight = 297;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
       const doc = new jsPDF('p', 'mm', 'a4');
       
-      // Add image to PDF (with padding)
-      const margin = 2; // margin in mm
+      const margin = 2;
       doc.addImage(imgData, 'PNG', margin, margin, imgWidth - (margin * 2), imgHeight - (margin * 2));
       
-      // If the image height is greater than page height, create multiple pages
       let heightLeft = imgHeight;
       let position = 0;
       
@@ -138,59 +129,45 @@ const OwnerReportPage = () => {
         heightLeft -= pageHeight;
       }
       
-      doc.save('owner_report.pdf');
+      doc.save('service_reminder_report.pdf');
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Failed to generate PDF. Please try again.');
       
-      // Restore the download button in case of error
       if (downloadButton) {
         downloadButton.style.display = 'inline-flex';
       }
     }
   };
 
-  // Helper function to get gender icon
-  const getGenderIcon = (gender) => {
-    switch(gender.toLowerCase()) {
-      case 'male':
-        return <FaMale size={40} />;
-      case 'female':
-        return <FaFemale size={40} />;
+  // Helper function to get service type icon
+  const getServiceIcon = (type) => {
+    switch(type.toLowerCase()) {
+      case 'oil change':
+        return <FaWrench size={40} />;
+      case 'tire rotation':
+        return <FaClock size={40} />;
+      case 'brake service':
+        return <FaExclamationTriangle size={40} />;
+      case 'general maintenance':
+        return <FaCheckCircle size={40} />;
       default:
-        return <FaIdCard size={40} />;
+        return <FaWrench size={40} />;
     }
   };
 
-  // Define colors for charts
-  const GENDER_COLORS = ['#2196F3', '#E91E63', '#9C27B0'];
-  const AGE_COLORS = ['#FF5722', '#FFC107', '#4CAF50', '#2196F3', '#9C27B0'];
+  // Define colors for each service type
+  const SERVICE_COLORS = ['#FF5722', '#2196F3', '#4CAF50', '#FFC107'];
 
-  // Prepare data for the age group bar chart
-  const ageChartData = ageGroupCounts.map(item => ({
-    ageGroup: item.ageGroup,
-    count: item.count
-  }));
+  // Status colors
+  const STATUS_COLORS = {
+    'Pending': '#FFC107',
+    'Completed': '#4CAF50',
+    'Overdue': '#F44336'
+  };
 
-  // Prepare data for the gender pie chart
-  const genderData = genderCounts.map(item => ({
-    name: item.gender,
-    value: item.count
-  }));
-
-  if (error) {
-    return (
-      <Box>
-        <Header />
-        <Box display="flex">
-          <Sidebar />
-          <Box flex={1} p={3} display="flex" justifyContent="center" alignItems="center">
-            <Typography color="error">{error}</Typography>
-          </Box>
-        </Box>
-      </Box>
-    );
-  }
+  const chartData = getServiceTypeCounts();
+  const statusData = getStatusCounts();
 
   return (
     <Box>
@@ -216,7 +193,6 @@ const OwnerReportPage = () => {
           }} 
           id="printable-section"
         >
-          {/* Letterhead */}
           <img 
             src={letterheadImage} 
             alt="Letterhead" 
@@ -228,26 +204,51 @@ const OwnerReportPage = () => {
             }} 
           />
 
-          {/* Summary Section */}
+          {/* Summary Statistics */}
           <Typography variant="h6" gutterBottom style={{ marginBottom: '20px', fontWeight: 'bold', color: '#333', textAlign: 'center' }}>
-            Owner Summary
+            Service Reminder Overview
           </Typography>
           <Box display="flex" justifyContent="space-between" mt={2} mb={4}>
             <Box style={{ backgroundColor: '#6200EA', padding: '20px', borderRadius: '10px', color: '#fff', flex: 1, marginRight: '10px', textAlign: 'center' }}>
-              <Typography variant="h6">Total Owners</Typography>
-              <Typography variant="h4">{totalOwners}</Typography>
+              <Typography variant="h6">Total Reminders</Typography>
+              <Typography variant="h4">{totalReminders}</Typography>
             </Box>
-            <Box style={{ backgroundColor: '#2196F3', padding: '20px', borderRadius: '10px', color: '#fff', flex: 1, marginRight: '10px', textAlign: 'center' }}>
-              <Typography variant="h6">Male Owners</Typography>
-              <Typography variant="h4">
-                {genderCounts.find(item => item.gender.toLowerCase() === 'male')?.count || 0}
-              </Typography>
+            <Box style={{ backgroundColor: '#FFC107', padding: '20px', borderRadius: '10px', color: '#fff', flex: 1, marginRight: '10px', textAlign: 'center' }}>
+              <Typography variant="h6">Pending Reminders</Typography>
+              <Typography variant="h4">{statusCounts['Pending'] || 0}</Typography>
             </Box>
-            <Box style={{ backgroundColor: '#E91E63', padding: '20px', borderRadius: '10px', color: '#fff', flex: 1, textAlign: 'center' }}>
-              <Typography variant="h6">Female Owners</Typography>
-              <Typography variant="h4">
-                {genderCounts.find(item => item.gender.toLowerCase() === 'female')?.count || 0}
-              </Typography>
+            <Box style={{ backgroundColor: '#F44336', padding: '20px', borderRadius: '10px', color: '#fff', flex: 1, textAlign: 'center' }}>
+              <Typography variant="h6">Overdue Reminders</Typography>
+              <Typography variant="h4">{overdueReminders}</Typography>
+            </Box>
+          </Box>
+
+          <Box mt={4} mb={4}>
+            <Typography variant="h6" gutterBottom style={{ marginBottom: '20px', fontWeight: 'bold', color: '#333', textAlign: 'center' }}>
+              Service Types
+            </Typography>
+            <Box 
+              display="grid" 
+              gridTemplateColumns="repeat(auto-fit, minmax(200px, 1fr))" 
+              gap={2}
+            >
+              {chartData.map((type, index) => (
+                <Box 
+                  key={type.serviceType} 
+                  style={{ 
+                    backgroundColor: SERVICE_COLORS[index % SERVICE_COLORS.length], 
+                    padding: '20px', 
+                    borderRadius: '10px', 
+                    color: '#fff',
+                    textAlign: 'center', 
+                    margin:'5px'
+                  }}
+                >
+                  <Box>{getServiceIcon(type.serviceType)}</Box>
+                  <Typography variant="h6">{type.serviceType}</Typography>
+                  <Typography variant="h4">{type.count}</Typography>
+                </Box>
+              ))}
             </Box>
           </Box>
 
@@ -259,40 +260,42 @@ const OwnerReportPage = () => {
             mt={4} 
             mb={4}
           >
-            {/* Bar Chart Section - Age Groups */}
+            {/* Bar Chart - Service Types */}
             <Box 
               style={{ 
                 flex: 1, 
-                marginRight: '15px',
+                marginRight: {xs: 0, md: '10px'}, 
+                marginBottom: {xs: '20px', md: 0},
                 backgroundColor: '#fff', 
                 padding: '20px', 
                 borderRadius: '10px', 
                 boxShadow: '0px 0px 10px rgba(0,0,0,0.1)',
                 display: 'flex',
                 flexDirection: 'column',
-                alignItems: 'center'
+                alignItems: 'center',
+                marginRight: '15px'
               }}
             >
               <Typography variant="h6" gutterBottom style={{ marginBottom: '20px', fontWeight: 'bold', color: '#333', textAlign: 'center' }}>
-                Age Distribution
+                Service Types Distribution
               </Typography>
               <Box style={{ width: '100%', overflowX: 'auto' }}>
-                <BarChart width={500} height={300} data={ageChartData}>
+                <BarChart width={500} height={300} data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="ageGroup" />
+                  <XAxis dataKey="serviceType" />
                   <YAxis />
                   <Tooltip />
                   <Legend />
                   <Bar dataKey="count">
-                    {ageChartData.map((entry, index) => (
-                      <Cell key={entry.ageGroup} fill={AGE_COLORS[index % AGE_COLORS.length]} />
+                    {chartData.map((entry, index) => (
+                      <Cell key={entry.serviceType} fill={SERVICE_COLORS[index % SERVICE_COLORS.length]} />
                     ))}
                   </Bar>
                 </BarChart>
               </Box>
             </Box>
 
-            {/* Pie Chart Section - Gender Distribution */}
+            {/* Pie Chart - Status Distribution */}
             <Box 
               style={{ 
                 flex: 1, 
@@ -306,12 +309,12 @@ const OwnerReportPage = () => {
               }}
             >
               <Typography variant="h6" gutterBottom style={{ marginBottom: '20px', fontWeight: 'bold', color: '#333', textAlign: 'center' }}>
-                Gender Distribution
+                Reminder Status Distribution
               </Typography>
               <Box style={{ width: '100%', overflowX: 'auto', display: 'flex', justifyContent: 'center' }}>
                 <PieChart width={400} height={300}>
                   <Pie
-                    data={genderData}
+                    data={statusData}
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
@@ -320,10 +323,10 @@ const OwnerReportPage = () => {
                     fill="#8884d8"
                     label
                   >
-                    {genderData.map((entry, index) => (
+                    {statusData.map((entry, index) => (
                       <Cell 
                         key={`cell-${index}`} 
-                        fill={GENDER_COLORS[index % GENDER_COLORS.length]} 
+                        fill={STATUS_COLORS[entry.name] || '#8884d8'} 
                       />
                     ))}
                   </Pie>
@@ -351,4 +354,4 @@ const OwnerReportPage = () => {
   );
 };
 
-export default OwnerReportPage;
+export default ServiceReminderReportPage;
