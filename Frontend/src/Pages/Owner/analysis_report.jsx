@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Sidebar from '../../Components/owner_sidebar';
-import Header from '../../Components/navbar';
+import Header from '../../Components/owner_navbar';
 import axios from 'axios';
 import html2canvas from 'html2canvas';
 import {
@@ -9,7 +9,7 @@ import {
   Button
 } from '@material-ui/core';
 import jsPDF from 'jspdf';
-import letterheadImage from '../../Images/letterhead.png';
+import letterheadImage from '../../Images/owner_letterhead.png';
 import { FaMale, FaFemale, FaIdCard } from 'react-icons/fa';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
 
@@ -223,7 +223,7 @@ const OwnerReportPage = () => {
             backgroundColor: 'white', 
             borderRadius: 8, 
             boxShadow: '0px 0px 10px rgba(0,0,0,0.1)', 
-            margin: '15px', 
+            margin: '5px', 
             position: 'relative',
             marginTop: '15px', 
             marginBottom: '15px',

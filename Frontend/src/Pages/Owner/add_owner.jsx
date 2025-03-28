@@ -6,7 +6,7 @@ import {
 } from '@material-ui/core';
 import { Add as AddIcon, Remove as RemoveIcon } from '@material-ui/icons';
 import Sidebar from '../../Components/owner_sidebar';
-import Header from '../../Components/navbar';
+import Header from '../../Components/owner_navbar';
 import axios from 'axios';
 import swal from 'sweetalert';
 

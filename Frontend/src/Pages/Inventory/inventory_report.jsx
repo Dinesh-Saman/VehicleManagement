@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
-import Sidebar from '../../Components/owner_sidebar';
-import Header from '../../Components/owner_navbar';
 import axios from 'axios';
 import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import {
   Box,
   Typography,
@@ -15,37 +16,43 @@ import {
   Paper,
   Button
 } from '@material-ui/core';
-import jsPDF from 'jspdf';
-import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
-import letterheadImage from '../../Images/owner_letterhead.png'; // Import your letterhead image
+import Sidebar from '../../Components/inventory_sidebar';
+import Header from '../../Components/inventory_navbar'; 
+import letterheadImage from '../../Images/inventory_letterhead.png'; // Import your letterhead image
 
-const OwnerReportPage = () => {
-  const [owners, setOwners] = useState([]);
+const InventoryReportPage = () => {
+  const [inventoryItems, setInventoryItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const reportRef = useRef(null);
 
   useEffect(() => {
-    const fetchOwners = async () => {
+    const fetchInventoryItems = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/owner/get-owners');
-        setOwners(response.data);
+        const response = await axios.get('http://localhost:3001/inventory/get-items');
+        
+        // Handle different possible response formats
+        if (Array.isArray(response.data)) {
+          setInventoryItems(response.data);
+        } else if (response.data && Array.isArray(response.data.items)) {
+          setInventoryItems(response.data.items);
+        } else if (response.data && Array.isArray(response.data.data)) {
+          setInventoryItems(response.data.data);
+        } else {
+          console.error("Unexpected API response format:", response.data);
+          setInventoryItems([]);
+        }
+        
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching owners:', error);
-        setError('Failed to load owners.');
+        console.error('Error fetching inventory items:', error);
+        setError('Failed to load inventory items.');
         setLoading(false);
       }
     };
 
-    fetchOwners();
+    fetchInventoryItems();
   }, []);
-
-  const formatDateOfBirth = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
-  };
 
   const handleDownloadPDF = async () => {
     if (!reportRef.current) return;
@@ -94,7 +101,7 @@ const OwnerReportPage = () => {
         heightLeft -= pageHeight;
       }
       
-      doc.save('owner_report.pdf');
+      doc.save('inventory_report.pdf');
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Failed to generate PDF. Please try again.');
@@ -109,14 +116,19 @@ const OwnerReportPage = () => {
   const handleDownloadExcel = () => {
     try {
       // Prepare the data for Excel
-      const excelData = owners.map(owner => ({
-        'Owner ID': owner.owner_id,
-        'Name': owner.name,
-        'Contact': owner.contact,
-        'Address': owner.address,
-        'License Number': owner.license_number,
-        'Date of Birth': formatDateOfBirth(owner.date_of_birth),
-        'Gender': owner.gender
+      const excelData = inventoryItems.map(item => ({
+        'Product Code': item.productCode,
+        'Name': item.name,
+        'Category': item.category,
+        'Brand': item.brand,
+        'Stock Quantity': item.stockQuantity,
+        'Status': item.status,
+        'Purchase Price': item.purchasePrice,
+        'Selling Price': item.sellingPrice,
+        'Minimum Stock Level': item.minimumStockLevel,
+        'Manufacturer': item.manufacturer || 'N/A',
+        'Condition': item.condition,
+        'Description': item.description || 'No description'
       }));
       
       // Create a new workbook
@@ -126,20 +138,20 @@ const OwnerReportPage = () => {
       const worksheet = XLSX.utils.json_to_sheet(excelData);
       
       // Add the worksheet to the workbook
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Owners');
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Inventory');
       
       // Generate Excel file
       const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
       
       // Save the file
       const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      saveAs(blob, 'owner_report.xlsx');
+      saveAs(blob, 'inventory_report.xlsx');
     } catch (error) {
       console.error('Error generating Excel:', error);
       alert('Failed to generate Excel file. Please try again.');
     }
   };
-  
+
   return (
     <Box>
       <Header />
@@ -164,41 +176,43 @@ const OwnerReportPage = () => {
           }} 
           id="printable-section"
         >
-          {/* Letterhead image */}
+          {/* Letterhead Image */}
           <img 
             src={letterheadImage} 
             alt="Letterhead" 
             style={{ 
               width: '100%', 
-              marginBottom: '20px', 
+              marginBottom: '10px', 
               borderBottom: '2px solid purple', 
               boxSizing: 'border-box',
             }} 
           />
-          
+
           <TableContainer component={Paper}>
             <Table>
-              <TableHead>
+              <TableHead  style={{ backgroundColor: '#2196F3' }}>
                 <TableRow>
-                  <TableCell style={{ borderRight: '1px solid #ddd', backgroundColor: '#f0f0f0' }}><strong>Owner ID</strong></TableCell>
+                  <TableCell style={{ borderRight: '1px solid #ddd', backgroundColor: '#f0f0f0' }}><strong>Product Code</strong></TableCell>
                   <TableCell style={{ borderRight: '1px solid #ddd', backgroundColor: '#f0f0f0' }}><strong>Name</strong></TableCell>
-                  <TableCell style={{ borderRight: '1px solid #ddd', backgroundColor: '#f0f0f0' }}><strong>Contact</strong></TableCell>
-                  <TableCell style={{ borderRight: '1px solid #ddd', backgroundColor: '#f0f0f0' }}><strong>Address</strong></TableCell>
-                  <TableCell style={{ borderRight: '1px solid #ddd', backgroundColor: '#f0f0f0' }}><strong>License Number</strong></TableCell>
-                  <TableCell style={{ borderRight: '1px solid #ddd', backgroundColor: '#f0f0f0' }}><strong>Date of Birth</strong></TableCell>
-                  <TableCell style={{ backgroundColor: '#f0f0f0' }}><strong>Gender</strong></TableCell>
+                  <TableCell style={{ borderRight: '1px solid #ddd', backgroundColor: '#f0f0f0' }}><strong>Category</strong></TableCell>
+                  <TableCell style={{ borderRight: '1px solid #ddd', backgroundColor: '#f0f0f0' }}><strong>Brand</strong></TableCell>
+                  <TableCell style={{ borderRight: '1px solid #ddd', backgroundColor: '#f0f0f0' }}><strong>Stock Quantity</strong></TableCell>
+                  <TableCell style={{ borderRight: '1px solid #ddd', backgroundColor: '#f0f0f0' }}><strong>Status</strong></TableCell>
+                  <TableCell style={{ borderRight: '1px solid #ddd', backgroundColor: '#f0f0f0' }}><strong>Purchase Price</strong></TableCell>
+                  <TableCell style={{ backgroundColor: '#f0f0f0' }}><strong>Selling Price</strong></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {owners.map((owner) => (
-                  <TableRow key={owner._id}>
-                    <TableCell style={{ borderRight: '1px solid #ddd' }}>{owner.owner_id}</TableCell>
-                    <TableCell style={{ borderRight: '1px solid #ddd' }}>{owner.name}</TableCell>
-                    <TableCell style={{ borderRight: '1px solid #ddd' }}>{owner.contact}</TableCell>
-                    <TableCell style={{ borderRight: '1px solid #ddd' }}>{owner.address}</TableCell>
-                    <TableCell style={{ borderRight: '1px solid #ddd' }}>{owner.license_number}</TableCell>
-                    <TableCell style={{ borderRight: '1px solid #ddd' }}>{formatDateOfBirth(owner.date_of_birth)}</TableCell>
-                    <TableCell>{owner.gender}</TableCell>
+                {inventoryItems.map((item) => (
+                  <TableRow key={item._id}>
+                    <TableCell style={{ borderRight: '1px solid #ddd' }}>{item.productCode}</TableCell>
+                    <TableCell style={{ borderRight: '1px solid #ddd' }}>{item.name}</TableCell>
+                    <TableCell style={{ borderRight: '1px solid #ddd' }}>{item.category}</TableCell>
+                    <TableCell style={{ borderRight: '1px solid #ddd' }}>{item.brand}</TableCell>
+                    <TableCell style={{ borderRight: '1px solid #ddd' }}>{item.stockQuantity}</TableCell>
+                    <TableCell style={{ borderRight: '1px solid #ddd' }}>{item.status}</TableCell>
+                    <TableCell style={{ borderRight: '1px solid #ddd' }}>${item.purchasePrice.toFixed(2)}</TableCell>
+                    <TableCell>${item.sellingPrice.toFixed(2)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -228,4 +242,4 @@ const OwnerReportPage = () => {
   );
 };
 
-export default OwnerReportPage;
+export default InventoryReportPage;

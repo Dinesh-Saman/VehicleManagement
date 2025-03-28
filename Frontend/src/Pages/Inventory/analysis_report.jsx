@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import Sidebar from '../../Components/sidebar';
-import Header from '../../Components/navbar';
+import Sidebar from '../../Components/inventory_sidebar';
+import Header from '../../Components/inventory_navbar'; 
 import axios from 'axios';
 import html2canvas from 'html2canvas';
 import {
@@ -10,50 +10,69 @@ import {
   Button
 } from '@material-ui/core';
 import jsPDF from 'jspdf';
-import letterheadImage from '../../Images/vehicle_letterhead.png'; // Import your letterhead image
-import { FaCar, FaTruck, FaMotorcycle, FaBus } from 'react-icons/fa';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
+import letterheadImage from '../../Images/inventory_letterhead.png'; // Replace with your letterhead
+import { 
+  FaBox, 
+  FaWarehouse, 
+  FaTags, 
+  FaExclamationTriangle 
+} from 'react-icons/fa';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  PieChart, 
+  Pie, 
+  Cell 
+} from 'recharts';
 
-const VehicleReportPage = () => {
-  const [vehicles, setVehicles] = useState([]);
+const InventoryReportPage = () => {
+  const [inventoryItems, setInventoryItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [vehicleTypes, setVehicleTypes] = useState([]);
-  const [statusCounts, setStatusCounts] = useState([]);
-  const [totalVehicles, setTotalVehicles] = useState(0);
+  const [categoryCounts, setCategoryCounts] = useState([]);
+  const [stockStatus, setStockStatus] = useState([]);
+  const [totalInventoryValue, setTotalInventoryValue] = useState(0);
   const reportRef = useRef(null);
 
   useEffect(() => {
-    const fetchVehicleData = async () => {
+    const fetchInventoryData = async () => {
       try {
-        // Fetch all vehicles
-        const vehiclesResponse = await axios.get('http://localhost:3001/vehicle/get-vehicles');
-        setVehicles(vehiclesResponse.data);
-        setTotalVehicles(vehiclesResponse.data.length);
+        // Fetch all inventory items
+        const itemsResponse = await axios.get('http://localhost:3001/inventory/get-items');
+        setInventoryItems(itemsResponse.data);
 
-        // Fetch vehicle type counts
-        const typeResponse = await axios.get('http://localhost:3001/vehicle/type-counts');
-        setVehicleTypes(typeResponse.data);
+        // Fetch category counts
+        const categoryResponse = await axios.get('http://localhost:3001/inventory/category-counts');
+        setCategoryCounts(categoryResponse.data);
 
-        // Fetch status counts
-        const statusResponse = await axios.get('http://localhost:3001/vehicle/status-counts');
-        setStatusCounts(statusResponse.data);
+        // Fetch stock status
+        const stockStatusResponse = await axios.get('http://localhost:3001/inventory/stock-status');
+        setStockStatus(stockStatusResponse.data);
+
+        // Calculate total inventory value
+        const totalValue = itemsResponse.data.reduce((total, item) => 
+          total + (item.stockQuantity * item.sellingPrice), 0);
+        setTotalInventoryValue(totalValue);
 
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching vehicle data:', error);
-        setError('Failed to load vehicle data.');
+        console.error('Error fetching inventory data:', error);
+        setError('Failed to load inventory data.');
         setLoading(false);
       }
     };
 
-    fetchVehicleData();
+    fetchInventoryData();
   }, []);
 
   const handleDownload = async () => {
     if (!reportRef.current) return;
     
-    // Hide the download button before capturing
     const downloadButton = document.getElementById('download-button');
     if (downloadButton) {
       downloadButton.style.display = 'none';
@@ -62,31 +81,27 @@ const VehicleReportPage = () => {
     try {
       const element = reportRef.current;
       const canvas = await html2canvas(element, {
-        scale: 2, // Higher scale for better quality
+        scale: 2,
         useCORS: true,
         logging: false,
         letterRendering: true
       });
       
-      // Restore the download button
       if (downloadButton) {
         downloadButton.style.display = 'inline-flex';
       }
       
       const imgData = canvas.toDataURL('image/png');
       
-      // Calculate dimensions
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
+      const imgWidth = 210;
+      const pageHeight = 297;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
       const doc = new jsPDF('p', 'mm', 'a4');
       
-      // Add image to PDF (with padding)
-      const margin = 2; // margin in mm
+      const margin = 2;
       doc.addImage(imgData, 'PNG', margin, margin, imgWidth - (margin * 2), imgHeight - (margin * 2));
       
-      // If the image height is greater than page height, create multiple pages
       let heightLeft = imgHeight;
       let position = 0;
       
@@ -97,67 +112,59 @@ const VehicleReportPage = () => {
         heightLeft -= pageHeight;
       }
       
-      doc.save('vehicle_report.pdf');
+      doc.save('inventory_report.pdf');
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Failed to generate PDF. Please try again.');
       
-      // Restore the download button in case of error
       if (downloadButton) {
         downloadButton.style.display = 'inline-flex';
       }
     }
   };
 
-  // Get active and inactive counts
+  // Status count helpers
   const getStatusCount = (status) => {
-    const statusItem = statusCounts.find(item => item.status === status);
+    const statusItem = stockStatus.find(item => item.status === status);
     return statusItem ? statusItem.count : 0;
   };
 
-  const activeCount = getStatusCount('Active');
-  const inactiveCount = getStatusCount('Inactive');
+  const inStockCount = getStatusCount('In Stock');
+  const lowStockCount = getStatusCount('Low Stock');
+  const outOfStockCount = getStatusCount('Out of Stock');
 
-  // Helper function to get vehicle type icon
-  const getVehicleIcon = (type) => {
-    switch(type.toLowerCase()) {
-      case 'car':
-        return <FaCar size={40} />;
-      case 'truck':
-        return <FaTruck size={40} />;
-      case 'motorcycle':
-        return <FaMotorcycle size={40} />;
-      case 'bus':
-        return <FaBus size={40} />;
+  // Category and Stock Status Icons
+  const getCategoryIcon = (category) => {
+    switch(category.toLowerCase()) {
+      case 'electronics':
+        return <FaBox size={40} />;
+      case 'clothing':
+        return <FaTags size={40} />;
+      case 'supplies':
+        return <FaWarehouse size={40} />;
       default:
-        return <FaCar size={40} />;
+        return <FaBox size={40} />;
     }
   };
 
-  // Define colors for each vehicle type (up to 4)
-  const VEHICLE_COLORS = ['#FF5722', '#2196F3', '#4CAF50', '#FFC107'];
+  // Color Definitions
+  const CATEGORY_COLORS = ['#FF5722', '#2196F3', '#4CAF50', '#FFC107'];
+  const STATUS_COLORS = {
+    'In Stock': '#4CAF50',
+    'Low Stock': '#FFC107',
+    'Out of Stock': '#F44336'
+  };
 
-  // Prepare data for the bar chart
-  const chartData = vehicleTypes.map(item => ({
-    vehicleType: item.vehicleType,
+  // Chart Data Preparation
+  const categoryChartData = categoryCounts.map(item => ({
+    category: item.category,
     count: item.count
   }));
 
-  // Prepare data for the status pie chart
-  const statusData = statusCounts.map(item => ({
+  const statusChartData = stockStatus.map(item => ({
     name: item.status,
     value: item.count
   }));
-
-  // Status colors
-  const STATUS_COLORS = {
-    'Active': '#4CAF50',
-    'Inactive': '#F44336',
-    'Maintenance': '#FFC107',
-    'Reserved': '#2196F3'
-  };
-
-  const PIE_COLORS = Object.values(STATUS_COLORS);
 
   return (
     <Box>
@@ -183,7 +190,6 @@ const VehicleReportPage = () => {
           }} 
           id="printable-section"
         >
-          {/* Replace the Box with the letterhead image */}
           <img 
             src={letterheadImage} 
             alt="Letterhead" 
@@ -195,40 +201,40 @@ const VehicleReportPage = () => {
             }} 
           />
 
-          {/* Status Section with Total, Active, and Inactive in one row */}
+          {/* Inventory Overview */}
           <Typography variant="h6" gutterBottom style={{ marginBottom: '20px', fontWeight: 'bold', color: '#333', textAlign: 'center' }}>
-              Total Vehicles 
-            </Typography>
+            Inventory Overview
+          </Typography>
           <Box display="flex" justifyContent="space-between" mt={2} mb={4}>
             <Box style={{ backgroundColor: '#6200EA', padding: '20px', borderRadius: '10px', color: '#fff', flex: 1, marginRight: '10px', textAlign: 'center' }}>
-              <Typography variant="h6">Total Vehicles</Typography>
-              <Typography variant="h4">{totalVehicles}</Typography>
+              <Typography variant="h6">Total Inventory Items</Typography>
+              <Typography variant="h4">{inventoryItems.length}</Typography>
             </Box>
             <Box style={{ backgroundColor: '#4CAF50', padding: '20px', borderRadius: '10px', color: '#fff', flex: 1, marginRight: '10px', textAlign: 'center' }}>
-              <Typography variant="h6">Active Vehicles</Typography>
-              <Typography variant="h4">{activeCount}</Typography>
+              <Typography variant="h6">Total Inventory Value</Typography>
+              <Typography variant="h4">Rs {totalInventoryValue.toLocaleString()}</Typography>
             </Box>
-            <Box style={{ backgroundColor: '#F44336', padding: '20px', borderRadius: '10px', color: '#fff', flex: 1, textAlign: 'center' }}>
-              <Typography variant="h6">Inactive Vehicles</Typography>
-              <Typography variant="h4">{inactiveCount}</Typography>
+            <Box style={{ backgroundColor: '#FFC107', padding: '20px', borderRadius: '10px', color: '#fff', flex: 1, textAlign: 'center' }}>
+              <Typography variant="h6">Average Item Value</Typography>
+              <Typography variant="h4">Rs {(totalInventoryValue / inventoryItems.length || 0).toLocaleString()}</Typography>
             </Box>
           </Box>
 
-          {/* Vehicle Types Section - Fixed the layout */}
+          {/* Category Section */}
           <Box mt={4} mb={4}>
             <Typography variant="h6" gutterBottom style={{ marginBottom: '20px', fontWeight: 'bold', color: '#333', textAlign: 'center' }}>
-              Vehicle Types
+              Inventory Categories
             </Typography>
             <Box 
               display="grid" 
               gridTemplateColumns="repeat(auto-fit, minmax(200px, 1fr))" 
               gap={2}
             >
-              {vehicleTypes.map((type, index) => (
+              {categoryCounts.map((category, index) => (
                 <Box 
-                  key={type.vehicleType} 
+                  key={category.category} 
                   style={{ 
-                    backgroundColor: VEHICLE_COLORS[index % VEHICLE_COLORS.length], 
+                    backgroundColor: CATEGORY_COLORS[index % CATEGORY_COLORS.length], 
                     padding: '20px', 
                     borderRadius: '10px', 
                     color: '#fff',
@@ -236,15 +242,15 @@ const VehicleReportPage = () => {
                     margin:'5px'
                   }}
                 >
-                  <Box>{getVehicleIcon(type.vehicleType)}</Box>
-                  <Typography variant="h6">{type.vehicleType}</Typography>
-                  <Typography variant="h4">{type.count}</Typography>
+                  <Box>{getCategoryIcon(category.category)}</Box>
+                  <Typography variant="h6">{category.category}</Typography>
+                  <Typography variant="h4">{category.count}</Typography>
                 </Box>
               ))}
             </Box>
           </Box>
 
-          {/* Charts Section - Made more responsive */}
+          {/* Charts Section */}
           <Box 
             display="flex" 
             flexDirection={{xs: 'column', md: 'row'}} 
@@ -252,7 +258,7 @@ const VehicleReportPage = () => {
             mt={4} 
             mb={4}
           >
-            {/* Bar Chart Section - Vehicle Types */}
+            {/* Category Bar Chart */}
             <Box 
               style={{ 
                 flex: 1, 
@@ -269,25 +275,25 @@ const VehicleReportPage = () => {
               }}
             >
               <Typography variant="h6" gutterBottom style={{ marginBottom: '20px', fontWeight: 'bold', color: '#333', textAlign: 'center' }}>
-                Vehicle Types Distribution
+                Category Distribution
               </Typography>
               <Box style={{ width: '100%', overflowX: 'auto' }}>
-                <BarChart width={500} height={300} data={chartData}>
+                <BarChart width={500} height={300} data={categoryChartData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="vehicleType" />
+                  <XAxis dataKey="category" />
                   <YAxis />
                   <Tooltip />
                   <Legend />
                   <Bar dataKey="count">
-                    {chartData.map((entry, index) => (
-                      <Cell key={entry.vehicleType} fill={VEHICLE_COLORS[index % VEHICLE_COLORS.length]} />
+                    {categoryChartData.map((entry, index) => (
+                      <Cell key={entry.category} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
                     ))}
                   </Bar>
                 </BarChart>
               </Box>
             </Box>
 
-            {/* Pie Chart Section - Status Distribution */}
+            {/* Stock Status Pie Chart */}
             <Box 
               style={{ 
                 flex: 1, 
@@ -301,12 +307,12 @@ const VehicleReportPage = () => {
               }}
             >
               <Typography variant="h6" gutterBottom style={{ marginBottom: '20px', fontWeight: 'bold', color: '#333', textAlign: 'center' }}>
-                Vehicle Status Distribution
+                Stock Status Distribution
               </Typography>
               <Box style={{ width: '100%', overflowX: 'auto', display: 'flex', justifyContent: 'center' }}>
                 <PieChart width={400} height={300}>
                   <Pie
-                    data={statusData}
+                    data={statusChartData}
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
@@ -315,10 +321,10 @@ const VehicleReportPage = () => {
                     fill="#8884d8"
                     label
                   >
-                    {statusData.map((entry, index) => (
+                    {statusChartData.map((entry, index) => (
                       <Cell 
                         key={`cell-${index}`} 
-                        fill={STATUS_COLORS[entry.name] || PIE_COLORS[index % PIE_COLORS.length]} 
+                        fill={STATUS_COLORS[entry.name]} 
                       />
                     ))}
                   </Pie>
@@ -346,4 +352,4 @@ const VehicleReportPage = () => {
   );
 };
 
-export default VehicleReportPage;
+export default InventoryReportPage;

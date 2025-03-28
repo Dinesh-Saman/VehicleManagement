@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TextField, MenuItem, FormControl, Select, InputLabel, TablePagination } from '@material-ui/core';
 import Swal from 'sweetalert2'; // Import SweetAlert2
 import Sidebar from '../../Components/owner_sidebar';
-import Header from '../../Components/navbar';
+import Header from '../../Components/owner_navbar';
 import { makeStyles } from '@material-ui/core/styles';
 import { useNavigate } from 'react-router-dom';
 

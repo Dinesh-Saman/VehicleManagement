@@ -6,6 +6,7 @@ import {
   FaFileAlt, FaChartLine, FaSignOutAlt, FaHome 
 } from 'react-icons/fa';
 import Logo from '../Images/logo.png';
+import { Dashboard } from '@material-ui/icons';
 
 // Styled components
 const SidebarContainer = styled.div`
@@ -87,7 +88,7 @@ const Sidebar = () => {
         <LogoImage style={{ width: '180px' }} />
       </LogoContainer>
       <Menu>
-        <Link to="/owner-management" style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Link to="/owner-dashboard" style={{ textDecoration: 'none', color: 'inherit' }}>
           <MenuItem>
             <Icon><FaTachometerAlt /></Icon>
             Dashboard
@@ -111,7 +112,7 @@ const Sidebar = () => {
             Owner Report
           </MenuItem>
         </Link>
-        <Link to="/analysis-report" style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Link to="/owner-analysis-report" style={{ textDecoration: 'none', color: 'inherit' }}>
           <MenuItem>
             <Icon><FaChartLine /></Icon>
             Analysis Report
@@ -121,6 +122,12 @@ const Sidebar = () => {
           <MenuItem>
             <Icon><FaHome /></Icon>
             Home
+          </MenuItem>
+        </Link>
+        <Link to="/main-dashboard" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <MenuItem>
+            <Icon><Dashboard /></Icon>
+            Main Dashboard
           </MenuItem>
         </Link>
       </Menu>

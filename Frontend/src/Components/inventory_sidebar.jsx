@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { 
   FaTachometerAlt, FaCar, FaPlusCircle, 
-  FaFileAlt, FaChartLine, FaSignOutAlt, FaHome, 
-  FaDashcube
+  FaFileAlt, FaChartLine, FaSignOutAlt, FaHome,
+  FaBoxes, FaWarehouse, FaClipboardList, FaUsers,
+  FaTools, FaShoppingCart, FaExchangeAlt, FaHistory
 } from 'react-icons/fa';
 import Logo from '../Images/logo.png';
 import { Dashboard } from '@material-ui/icons';
@@ -85,55 +86,50 @@ const SignOutContainer = styled.div`
 const Sidebar = () => {
   return (
     <SidebarContainer>
-      <LogoContainer>
-        <LogoImage style={{ width: '180px' }} />
-      </LogoContainer>
       <Menu>
-        <Link to="/vehicle-dashboard" style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Link to="/inventory-dashboard" style={{ textDecoration: 'none', color: 'inherit' }}>
           <MenuItem>
             <Icon><FaTachometerAlt /></Icon>
             Dashboard
           </MenuItem>
         </Link>
-        <Link to="/view-vehicle" style={{ textDecoration: 'none', color: 'inherit' }}>
+        
+        <Link to="/view-inventory" style={{ textDecoration: 'none', color: 'inherit' }}>
           <MenuItem>
-            <Icon><FaCar /></Icon>
-            View Vehicle
+            <Icon><FaBoxes /></Icon>
+            View Inventory
           </MenuItem>
         </Link>
-        <Link to="/add-vehicle" style={{ textDecoration: 'none', color: 'inherit' }}>
+        
+        <Link to="/add-inventory" style={{ textDecoration: 'none', color: 'inherit' }}>
           <MenuItem>
             <Icon><FaPlusCircle /></Icon>
-            Add Vehicle
+            Add Inventory
           </MenuItem>
         </Link>
-        <Link to="/vehicle-report" style={{ textDecoration: 'none', color: 'inherit' }}>
+        
+        <Link to="/inventory-report" style={{ textDecoration: 'none', color: 'inherit' }}>
           <MenuItem>
             <Icon><FaFileAlt /></Icon>
-            Vehicle Report
+            Inventory Report
           </MenuItem>
         </Link>
-        <Link to="/vehicle-analysis-report" style={{ textDecoration: 'none', color: 'inherit' }}>
+        
+        <Link to="/inventory-analysis-report" style={{ textDecoration: 'none', color: 'inherit' }}>
           <MenuItem>
             <Icon><FaChartLine /></Icon>
             Analysis Report
           </MenuItem>
         </Link>
-        <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-          <MenuItem>
-            <Icon><FaHome /></Icon>
-            Home
-          </MenuItem>
-        </Link>
         <Link to="/main-dashboard" style={{ textDecoration: 'none', color: 'inherit' }}>
           <MenuItem>
-            <Icon><Dashboard /></Icon>
+            <Icon><Dashboard/></Icon>
             Main Dashboard
           </MenuItem>
         </Link>
       </Menu>
       <SignOutContainer>
-        <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Link to="/main-dashboard" style={{ textDecoration: 'none', color: 'inherit' }}>
           <MenuItem>
             <Icon><FaSignOutAlt /></Icon>
             Sign Out

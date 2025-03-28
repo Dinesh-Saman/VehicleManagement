@@ -80,17 +80,17 @@ const MainDashboard = () => {
     {
       title: 'Vehicle Management',
       illustration: 'https://png.pngtree.com/background/20220714/original/pngtree-big-isolated-vehicle-vector-colorful-icons-flat-illustrations-of-delivery-by-picture-image_1607668.jpg', // Replace with your image URL
-      path: '/vehicle-management',
+      path: '/vehicle-dashboard',
     },
     {
       title: 'Owner Management',
       illustration: 'https://img.freepik.com/premium-vector/professional-car-salesman-vector-design-illustration_1138841-28919.jpg', // Replace with your image URL
-      path: '/owner-management',
+      path: '/owner-dashboard',
     },
     {
       title: 'Inventory Management',
       illustration: 'https://media.licdn.com/dms/image/v2/D4D12AQGJp3926DUjAw/article-cover_image-shrink_600_2000/article-cover_image-shrink_600_2000/0/1700577262165?e=2147483647&v=beta&t=5q3FIE9dikbrleHTUCU4ck5UMckNfM9db76DoFtK0oE', // Replace with your image URL
-      path: '/service-maintenance',
+      path: '/inventory-dashboard',
     },
     {
       title: 'Service Reminder & Modifier',

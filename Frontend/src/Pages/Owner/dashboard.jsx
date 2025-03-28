@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { FaMale, FaFemale, FaUserAlt } from 'react-icons/fa';
 import { Typography } from '@material-ui/core';
 import Sidebar from '../../Components/owner_sidebar';
-import Header from '../../Components/navbar';
+import Header from '../../Components/owner_navbar';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
 

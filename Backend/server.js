@@ -11,6 +11,7 @@ const PORT = process.env.PORT || 3000;
 const VehicleRoutes = require("./routes/vehicleRoute");
 const OwnerRoutes = require("./routes/ownerRoute");
 const UserRoutes = require("./routes/userRoute");
+const InventoryRoutes = require("./routes/inventoryRoute");
 
 const app = express();
 
@@ -25,6 +26,7 @@ db_connection();
 app.use("/vehicle", VehicleRoutes);   
 app.use("/owner", OwnerRoutes);  
 app.use("/admin", UserRoutes);  
+app.use("/inventory", InventoryRoutes);  
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

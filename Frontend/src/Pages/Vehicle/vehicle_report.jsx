@@ -18,7 +18,7 @@ import {
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import letterheadImage from '../../Images/letterhead.png'; // Import your letterhead image
+import letterheadImage from '../../Images/vehicle_letterhead.png'; // Import your letterhead image
 
 const VehicleReportPage = () => {
   const [vehicles, setVehicles] = useState([]);
