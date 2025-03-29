@@ -20,6 +20,7 @@ import BuildIcon from '@material-ui/icons/Build';
 import PriorityHighIcon from '@material-ui/icons/PriorityHigh';
 import AttachMoneyIcon from '@material-ui/icons/AttachMoney';
 import ReplayIcon from '@material-ui/icons/Replay';
+import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 
 // Custom Pagination Component
 const CustomPagination = ({ count, page, rowsPerPage, onPageChange }) => {
@@ -140,6 +141,13 @@ const useStyles = makeStyles((theme) => ({
       backgroundColor: '#2E7D32',
     },
   },
+  completedButton: {
+    backgroundColor: '#2196f3',
+    color: 'white',
+    '&:hover': {
+      backgroundColor: '#1565c0',
+    },
+  },
   statusChip: {
     margin: theme.spacing(0.5),
     fontWeight: 'bold',
@@ -227,6 +235,65 @@ const ViewServiceReminder = () => {
     }
   };
 
+  const handleComplete = async (id) => {
+    const { value: formValues } = await Swal.fire({
+      title: 'Mark Service as Completed',
+      html:
+        '<div style="text-align: left;">' +
+        '<label>Actual Service Date</label>' +
+        '<input id="actualServiceDate" type="date" class="swal2-input" required>' +
+        '<label>Actual Service Mileage</label>' +
+        '<input id="actualServiceMileage" type="number" class="swal2-input" placeholder="Mileage">' +
+        '<label>Notes</label>' +
+        '<textarea id="notes" class="swal2-textarea" placeholder="Additional notes"></textarea>' +
+        '</div>',
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'Mark Completed',
+      cancelButtonText: 'Cancel',
+      preConfirm: () => {
+        return {
+          actualServiceDate: document.getElementById('actualServiceDate').value,
+          actualServiceMileage: document.getElementById('actualServiceMileage').value,
+          notes: document.getElementById('notes').value
+        }
+      }
+    });
+
+    if (formValues) {
+      try {
+        const response = await axios.put(
+          `http://localhost:3001/service-reminder/complete-reminder/${id}`,
+          {
+            actualServiceDate: formValues.actualServiceDate || new Date(),
+            actualServiceMileage: formValues.actualServiceMileage,
+            notes: formValues.notes
+          }
+        );
+
+        // Update the local state
+        setReminders(reminders.map(reminder => 
+          reminder._id === id ? response.data : reminder
+        ));
+
+        Swal.fire({
+          title: 'Success!',
+          text: 'Service marked as completed',
+          icon: 'success',
+          confirmButtonColor: '#3085d6',
+        });
+      } catch (error) {
+        console.error("Error completing service:", error);
+        Swal.fire({
+          title: 'Error!',
+          text: 'Failed to mark service as completed',
+          icon: 'error',
+          confirmButtonColor: '#d33',
+        });
+      }
+    }
+  };
+
   const handleUpdate = (reminderId) => {
     navigate(`/update-service-reminder/${reminderId}`);
   };
@@ -253,30 +320,30 @@ const ViewServiceReminder = () => {
     return vehicles.find(v => v._id === vehicleId) || {};
   };
 
-// Filter reminders based on search criteria
-const filteredReminders = reminders.filter(reminder => {
-  if (!searchQuery) return true;
-  
-  // Handle vehicle search separately 
-  if (searchCriteria === 'vehicle') {
-    // If reminder doesn't have a vehicle, return false
-    if (!reminder.vehicle) return false;
+  // Filter reminders based on search criteria
+  const filteredReminders = reminders.filter(reminder => {
+    if (!searchQuery) return true;
     
-    // Convert search to lowercase for case-insensitive comparison
-    const searchLowerCase = searchQuery.toLowerCase();
+    // Handle vehicle search separately 
+    if (searchCriteria === 'vehicle') {
+      // If reminder doesn't have a vehicle, return false
+      if (!reminder.vehicle) return false;
+      
+      // Convert search to lowercase for case-insensitive comparison
+      const searchLowerCase = searchQuery.toLowerCase();
+      
+      // Check against vehicle make, model, and registration number
+      return (
+        reminder.vehicle.make?.toLowerCase().includes(searchLowerCase) ||
+        reminder.vehicle.model?.toLowerCase().includes(searchLowerCase) ||
+        reminder.vehicle.registrationNumber?.toLowerCase().includes(searchLowerCase)
+      );
+    }
     
-    // Check against vehicle make, model, and registration number
-    return (
-      reminder.vehicle.make?.toLowerCase().includes(searchLowerCase) ||
-      reminder.vehicle.model?.toLowerCase().includes(searchLowerCase) ||
-      reminder.vehicle.registrationNumber?.toLowerCase().includes(searchLowerCase)
-    );
-  }
-  
-  // For other search criteria
-  const field = reminder[searchCriteria]?.toString().toLowerCase();
-  return field?.includes(searchQuery.toLowerCase());
-});
+    // For other search criteria
+    const field = reminder[searchCriteria]?.toString().toLowerCase();
+    return field?.includes(searchQuery.toLowerCase());
+  });
 
   // Sort by due date (ascending)
   const sortedReminders = [...filteredReminders].sort((a, b) => {
@@ -420,9 +487,15 @@ const filteredReminders = reminders.filter(reminder => {
                                 >
                                   <EditIcon fontSize="small" />
                                 </IconButton>
+                                <IconButton
+                                  className={`${classes.actionButton} ${classes.completedButton}`}
+                                  size="small"
+                                  onClick={() => handleComplete(reminder._id)}
+                                >
+                                  <CheckCircleIcon fontSize="small" />
+                                </IconButton>
                               </>
                             )}
-
                             <IconButton
                               className={`${classes.actionButton} ${classes.deleteButton}`}
                               size="small"

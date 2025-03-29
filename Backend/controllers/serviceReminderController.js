@@ -8,27 +8,40 @@ const nodemailer = require('nodemailer');
 
 // Helper method to predict optimal service date
 const predictOptimalServiceDate = async (vehicle, serviceType) => {
-  return new Promise((resolve, reject) => {
-    const modelPath = path.resolve(__dirname, '../ai_model/service_date_model.pkl');
-    const scriptPath = path.resolve(__dirname, '../ai_model/predict_service_date.py');
 
+  const modelPath = path.resolve(__dirname, '../controllers/ai_model/service_date_model.pkl');
+  const scriptPath = path.resolve(__dirname, '../controllers/ai_model/predict_service_date.py');
+
+  return new Promise((resolve, reject) => {
     const command = `python "${scriptPath}" "${modelPath}" ${vehicle.mileage} ${vehicle.lastServiceMileage} "${serviceType}" "${vehicle.make}" ${vehicle.year}`;
 
     exec(command, (error, stdout, stderr) => {
       if (error) {
-        console.error("Error predicting service date:", error);
-        // Fallback: 3 months from now or 5000 miles, whichever comes first
-        const fallbackDate = new Date();
-        fallbackDate.setMonth(fallbackDate.getMonth() + 3);
-        resolve(fallbackDate);
-      } else {
-        try {
-          const prediction = new Date(stdout.trim());
-          resolve(isNaN(prediction.getTime()) ? new Date() : prediction);
-        } catch (e) {
-          resolve(new Date()); // Default to today if parsing fails
-        }
+        console.error("Error:", stderr);
+        const fallback = new Date();
+        fallback.setMonth(fallback.getMonth() + 6);
+        resolve(fallback);
+        return;
       }
+
+      // stdout should now be JUST the number (e.g. "186.80")
+      const days = parseFloat(stdout.trim());
+      
+      if (isNaN(days)) {
+        console.error("Invalid days value:", stdout);
+        const fallback = new Date();
+        fallback.setMonth(fallback.getMonth() + 6);
+        resolve(fallback);
+        return;
+      }
+
+      // Apply reasonable bounds (1-12 months)
+      const boundedDays = Math.max(30, Math.min(days, 365));
+      
+      const prediction = new Date();
+      prediction.setDate(prediction.getDate() + boundedDays);
+      
+      resolve(prediction);
     });
   });
 };
@@ -172,6 +185,7 @@ exports.getServiceReminder = async (req, res) => {
 exports.updateServiceReminder = async (req, res) => {
   try {
     const { id } = req.params;
+    
     const updateData = req.body;
 
     // Validate at least one due field exists if updating
@@ -241,14 +255,17 @@ exports.markAsCompleted = async (req, res) => {
 
     await reminder.save();
 
+    let newDueDate = null;
+    let newReminder = null;
+
     // If recurring, create new reminder
     if (reminder.recurringInterval) {
-      const newDueDate = await predictOptimalServiceDate(
+      newDueDate = await predictOptimalServiceDate(
         reminder.vehicle, 
         reminder.serviceType
       );
 
-      const newReminder = new ServiceReminder({
+      newReminder = new ServiceReminder({
         vehicle: reminder.vehicle._id,
         serviceType: reminder.serviceType,
         dueDate: newDueDate,
@@ -260,7 +277,61 @@ exports.markAsCompleted = async (req, res) => {
       await newReminder.save();
     }
 
-    res.json(reminder);
+    // Send completion notification to owner if exists
+    if (reminder.vehicle.owner) {
+      const owner = await Owner.findById(reminder.vehicle.owner);
+      if (owner && owner.email) {
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_APP_PASSWORD
+          }
+        });
+
+        const mailOptions = {
+          from: process.env.EMAIL_FROM || 'Vehicle Management System <noreply@example.com>',
+          to: owner.email,
+          subject: `Service Completed: ${reminder.serviceType} for ${reminder.vehicle.make} ${reminder.vehicle.model}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+              <h2 style="color: #333;">Service Completion Confirmation</h2>
+              <p><strong>Vehicle:</strong> ${reminder.vehicle.make} ${reminder.vehicle.model} (${reminder.vehicle.registrationNumber})</p>
+              <p><strong>Service Type:</strong> ${reminder.serviceType}</p>
+              <p><strong>Completed On:</strong> ${reminder.completedAt.toLocaleDateString()}</p>
+              ${actualServiceMileage ? `<p><strong>Service Mileage:</strong> ${actualServiceMileage}</p>` : ''}
+              ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ''}
+              
+              ${newDueDate ? `
+                <div style="margin-top: 20px; background-color: #f8f9fa; padding: 15px; border-radius: 5px;">
+                  <h3 style="color: #2c3e50;">Next Service Reminder</h3>
+                  <p><strong>Next Service Type:</strong> ${reminder.serviceType}</p>
+                  <p><strong>Scheduled Date:</strong> ${newDueDate.toLocaleDateString()}</p>
+                  ${reminder.recurringInterval ? `<p><strong>Recurring Interval:</strong> ${reminder.recurringInterval}</p>` : ''}
+                </div>
+              ` : ''}
+              
+              <p style="margin-top: 20px; color: #666;">
+                Thank you for maintaining your vehicle with us.
+              </p>
+            </div>
+          `
+        };
+
+        transporter.sendMail(mailOptions, (error, info) => {
+          if (error) {
+            console.error('Error sending completion email:', error);
+          } else {
+            console.log('Completion email sent:', info.response);
+          }
+        });
+      }
+    }
+
+    res.json({
+      reminder,
+      newReminder: newReminder || null
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: err.message });

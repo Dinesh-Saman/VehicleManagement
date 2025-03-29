@@ -29,7 +29,7 @@ const vehicleSchema = new Schema({
   vehicleType: {
     type: String,
     required: true,
-    enum: ['Sedan', 'SUV', 'Truck', 'Hatchback', 'Coupe', 'Van', 'Motorcycle'], 
+    enum: ['Sedan', 'SUV', 'Truck', 'Hatchback', 'Coupe', 'Van', 'Motorcycle', 'Convertible', 'Crossover', 'Minivan', 'Pickup Truck', 'Sports Car', 'Electric Vehicle', 'Hybrid Vehicle']
   },
   color: {
     type: String,

@@ -429,6 +429,16 @@ const AddOwner = () => {
                   variant="outlined"
                   value={contact}
                   onChange={handleContactChange}
+                  onKeyPress={(e) => {
+                    // Only allow numbers (0-9) to be entered
+                    if (!/[0-9]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  inputProps={{
+                    maxLength: 10, // Restrict to 10 characters
+                    inputMode: 'numeric' // Show numeric keyboard on mobile devices
+                  }}
                   helperText={errors.contact}
                   error={!!errors.contact}
                   required
