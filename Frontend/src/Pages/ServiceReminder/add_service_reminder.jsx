@@ -326,7 +326,7 @@ const AddServiceReminder = () => {
                   type="number"
                   InputProps={{ 
                     inputProps: { min: 0, step: 0.01 },
-                    startAdornment: <InputAdornment position="start">$</InputAdornment>
+                    startAdornment: <InputAdornment position="start">Rs </InputAdornment>
                   }}
                 />
 
