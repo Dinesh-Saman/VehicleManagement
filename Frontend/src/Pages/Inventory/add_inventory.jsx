@@ -100,6 +100,7 @@ const AddInventory = () => {
   // Form validation
   const validateForm = () => {
     const newErrors = {};
+    const MAX_PRICE = 1000000;
     
     // Required field validations
     if (!name) newErrors.name = "Name is required.";
@@ -122,10 +123,13 @@ const AddInventory = () => {
     if (sellingPrice === '' || isNaN(sellingPrice) || parseFloat(sellingPrice) < 0) {
       newErrors.sellingPrice = "Selling Price must be a non-negative number.";
     }
+
+    if (purchasePrice === '' || isNaN(purchasePrice) || parseFloat(purchasePrice) < 0 || parseFloat(purchasePrice) > MAX_PRICE) {
+      newErrors.purchasePrice = `Purchase Price must be a non-negative number not exceeding ${MAX_PRICE.toLocaleString()}.`;
+    }
     
-    // Optional price comparison
-    if (parseFloat(purchasePrice) > parseFloat(sellingPrice)) {
-      newErrors.sellingPrice = "Selling Price should be greater than Purchase Price.";
+    if (sellingPrice === '' || isNaN(sellingPrice) || parseFloat(sellingPrice) < 0 || parseFloat(sellingPrice) > MAX_PRICE) {
+      newErrors.sellingPrice = `Selling Price must be a non-negative number not exceeding ${MAX_PRICE.toLocaleString()}.`;
     }
     
     return newErrors;

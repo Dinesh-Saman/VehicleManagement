@@ -131,6 +131,17 @@ const AddServiceReminder = () => {
     if (estimatedCost !== '' && (isNaN(estimatedCost) || parseFloat(estimatedCost) < 0)) {
       newErrors.estimatedCost = "Estimated cost must be a non-negative number.";
     }
+
+    if (
+      dueMileage !== '' && 
+      (
+        isNaN(dueMileage) || 
+        parseInt(dueMileage) < 0 || 
+        parseInt(dueMileage) > 1000000
+      )
+    ) {
+      newErrors.dueMileage = "Due mileage must be a non-negative number not exceeding 1,000,000.";
+    }
     
     return newErrors;
   };
