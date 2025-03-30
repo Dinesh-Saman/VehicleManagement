@@ -1,9 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
-import { Typography, TextField, Button } from '@material-ui/core';
+import { 
+  Typography, 
+  TextField, 
+  Button
+} from '@material-ui/core';
 import { useNavigate } from 'react-router-dom';
 import { Email, Lock, Person } from '@material-ui/icons';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 const RegistrationContainer = styled.div`
   display: flex;
@@ -39,7 +44,7 @@ const RegistrationButton = styled(Button)`
 const IconWrapper = styled.div`
   display: flex;
   align-items: center;
-  margin-bottom: 5px;
+  margin-bottom: 20px;
 `;
 
 const LoginText = styled(Typography)`
@@ -56,15 +61,6 @@ const LoginText = styled(Typography)`
   }
 `;
 
-const ErrorText = styled(Typography)`
-  color: red;
-  font-size: 0.75rem;
-  text-align: left;
-  margin-top: -10px;
-  margin-bottom: 10px;
-  padding-left: 36px;
-`;
-
 const RegistrationPage = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -73,13 +69,13 @@ const RegistrationPage = () => {
     password: '',
     confirmPassword: ''
   });
-  const [errors, setErrors] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
+  const [fieldErrors, setFieldErrors] = useState({
+    username: false,
+    email: false,
+    password: false,
+    confirmPassword: false
   });
-  const [submitError, setSubmitError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Email validation regex
   const validateEmail = (email) => {
@@ -92,41 +88,6 @@ const RegistrationPage = () => {
     return password.length >= 6;
   };
 
-  // Real-time validation
-  useEffect(() => {
-    const newErrors = { ...errors };
-
-    // Username validation
-    if (formData.username.length > 0 && formData.username.length < 3) {
-      newErrors.username = 'Username must be at least 3 characters';
-    } else {
-      newErrors.username = '';
-    }
-
-    // Email validation
-    if (formData.email.length > 0 && !validateEmail(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    } else {
-      newErrors.email = '';
-    }
-
-    // Password validation
-    if (formData.password.length > 0 && !validatePassword(formData.password)) {
-      newErrors.password = 'Password must be at least 6 characters';
-    } else {
-      newErrors.password = '';
-    }
-
-    // Confirm password validation
-    if (formData.confirmPassword.length > 0 && formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    } else {
-      newErrors.confirmPassword = '';
-    }
-
-    setErrors(newErrors);
-  }, [formData]);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -135,24 +96,96 @@ const RegistrationPage = () => {
     });
   };
 
+  const showErrorAlert = (message) => {
+    Swal.fire({
+      icon: 'error',
+      title: 'Registration Error',
+      text: message,
+      confirmButtonColor: '#3f51b5'
+    });
+  };
+
+  const showSuccessAlert = () => {
+    Swal.fire({
+      title: 'Success!',
+      text: 'Registration successful! Redirecting to login...',
+      icon: 'success',
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+      willClose: () => {
+        navigate('/login');
+      }
+    });
+  };
+
+  const validateForm = () => {
+    const errors = [];
+    const newFieldErrors = {
+      username: false,
+      email: false,
+      password: false,
+      confirmPassword: false
+    };
+
+    // Check empty fields first
+    if (!formData.username) {
+      errors.push('Username is required');
+      newFieldErrors.username = true;
+    }
+    if (!formData.email) {
+      errors.push('Email is required');
+      newFieldErrors.email = true;
+    }
+    if (!formData.password) {
+      errors.push('Password is required');
+      newFieldErrors.password = true;
+    }
+    if (!formData.confirmPassword) {
+      errors.push('Please confirm your password');
+      newFieldErrors.confirmPassword = true;
+    }
+
+    // Only validate further if fields are not empty
+    if (formData.username && formData.username.length < 3) {
+      errors.push('Username must be at least 3 characters');
+      newFieldErrors.username = true;
+    }
+
+    if (formData.email && !validateEmail(formData.email)) {
+      errors.push('Please enter a valid email address');
+      newFieldErrors.email = true;
+    }
+
+    if (formData.password && !validatePassword(formData.password)) {
+      errors.push('Password must be at least 6 characters');
+      newFieldErrors.password = true;
+    }
+
+    if (formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword) {
+      errors.push('Passwords do not match');
+      newFieldErrors.confirmPassword = true;
+    }
+
+    setFieldErrors(newFieldErrors);
+    return errors;
+  };
+
   const handleRegistration = async () => {
-    // Check if any fields are empty
-    const emptyFields = Object.entries(formData).filter(([key, value]) => !value);
-    if (emptyFields.length > 0) {
-      const newErrors = { ...errors };
-      emptyFields.forEach(([field]) => {
-        newErrors[field] = 'This field is required';
-      });
-      setErrors(newErrors);
+    if (isSubmitting) return;
+    
+    const validationErrors = validateForm();
+    
+    if (validationErrors.length > 0) {
+      showErrorAlert(validationErrors.join('\n'));
       return;
     }
 
-    // Check if there are any validation errors
-    if (Object.values(errors).some(error => error)) {
-      setSubmitError('Please fix the errors in the form');
-      return;
-    }
-
+    setIsSubmitting(true);
+    
     const userData = {
       username: formData.username,
       email: formData.email,
@@ -166,13 +199,15 @@ const RegistrationPage = () => {
         },
       });
 
-      if (response.status === 200) {
-        navigate('/login');
+      if (response.data && response.data.success) {
+        showSuccessAlert();
       } else {
-        setSubmitError(response.data.message || 'Registration failed');
+        showErrorAlert(response.data?.message || 'Registration failed');
       }
     } catch (err) {
-      setSubmitError(err.response?.data?.message || 'An error occurred. Please try again.');
+      showErrorAlert(err.response?.data?.message || 'An error occurred. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -192,11 +227,10 @@ const RegistrationPage = () => {
             fullWidth
             value={formData.username}
             onChange={handleChange}
-            error={!!errors.username}
-            style={{ marginBottom: '5px' }}
+            error={fieldErrors.username}
+            helperText={fieldErrors.username ? ' ' : ''}
           />
         </IconWrapper>
-        {errors.username && <ErrorText>{errors.username}</ErrorText>}
         
         <IconWrapper>
           <Email style={{ marginRight: '10px', color: '#3f51b5' }} />
@@ -207,11 +241,10 @@ const RegistrationPage = () => {
             fullWidth
             value={formData.email}
             onChange={handleChange}
-            error={!!errors.email}
-            style={{ marginBottom: '5px' }}
+            error={fieldErrors.email}
+            helperText={fieldErrors.email ? ' ' : ''}
           />
         </IconWrapper>
-        {errors.email && <ErrorText>{errors.email}</ErrorText>}
         
         <IconWrapper>
           <Lock style={{ marginRight: '10px', color: '#3f51b5' }} />
@@ -223,11 +256,10 @@ const RegistrationPage = () => {
             fullWidth
             value={formData.password}
             onChange={handleChange}
-            error={!!errors.password}
-            style={{ marginBottom: '5px' }}
+            error={fieldErrors.password}
+            helperText={fieldErrors.password ? ' ' : ''}
           />
         </IconWrapper>
-        {errors.password && <ErrorText>{errors.password}</ErrorText>}
         
         <IconWrapper>
           <Lock style={{ marginRight: '10px', color: '#3f51b5' }} />
@@ -239,21 +271,17 @@ const RegistrationPage = () => {
             fullWidth
             value={formData.confirmPassword}
             onChange={handleChange}
-            error={!!errors.confirmPassword}
-            style={{ marginBottom: '5px' }}
+            error={fieldErrors.confirmPassword}
+            helperText={fieldErrors.confirmPassword ? ' ' : ''}
           />
         </IconWrapper>
-        {errors.confirmPassword && <ErrorText>{errors.confirmPassword}</ErrorText>}
-        
-        {submitError && <Typography color="error" style={{ marginBottom: '10px' }}>{submitError}</Typography>}
         
         <RegistrationButton
           variant="contained"
           onClick={handleRegistration}
-          disabled={Object.values(errors).some(error => error) || 
-                   Object.values(formData).some(value => !value)}
+          disabled={isSubmitting}
         >
-          Register
+          {isSubmitting ? 'Registering...' : 'Register'}
         </RegistrationButton>
         
         <LoginText variant="body2">

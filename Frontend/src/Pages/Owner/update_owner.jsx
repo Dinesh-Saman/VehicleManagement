@@ -467,6 +467,11 @@ const UpdateOwner = () => {
                   helperText={errors.contact}
                   error={!!errors.contact}
                   required
+                  inputProps={{
+                    maxLength: 10,
+                    inputMode: 'numeric',
+                    pattern: '[0-9]{10}'
+                  }}
                 />
                 
                 {/* Added Email Field */}

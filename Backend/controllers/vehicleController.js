@@ -417,15 +417,6 @@ exports.updateVehicleMileage = async (req, res) => {
     vehicle.lastServiceMileage = lastServiceMileage !== undefined ? lastServiceMileage : vehicle.lastServiceMileage;
     await vehicle.save();
 
-    // Predict next service mileage and notify the owner
-    if (vehicle.owner) {
-      const owner = await Owner.findById(vehicle.owner);
-      const nextServiceMileage = await predictNextServiceMileage(vehicle);
-      console.log("Next service Milage :"+nextServiceMileage);
-      const message = `Your vehicle ${vehicle.registrationNumber} is due for service at ${nextServiceMileage} miles.`;
-      sendEmailNotification(owner.email, message);
-    }
-
     res.status(200).json({ message: "Vehicle mileage updated successfully!" });
   } catch (err) {
     console.error(err);

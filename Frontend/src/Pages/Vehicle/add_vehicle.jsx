@@ -20,6 +20,28 @@ const AddVehicle = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [isFormValid, setIsFormValid] = useState(false);
 
+  const vehicleMakes = [
+    'Toyota',
+    'Honda',
+    'Ford',
+    'Chevrolet',
+    'Nissan',
+    'Hyundai',
+    'Kia',
+    'Volkswagen',
+    'BMW',
+    'Mercedes-Benz',
+    'Audi',
+    'Lexus',
+    'Subaru',
+    'Mazda',
+    'Jeep',
+    'Tesla',
+    'Volvo',
+    'Porsche',
+    'Other'
+  ];
+
   // Generate year options from 1950 to current year
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: currentYear - 1949 }, (_, i) => currentYear - i);
@@ -319,6 +341,7 @@ const AddVehicle = () => {
                   required
                 />
                 <TextField
+                  select
                   fullWidth
                   margin="normal"
                   label="Make"
@@ -328,7 +351,13 @@ const AddVehicle = () => {
                   helperText={errors.make}
                   error={!!errors.make}
                   required
-                />
+                >
+                  {vehicleMakes.map((makeOption) => (
+                    <MenuItem key={makeOption} value={makeOption}>
+                      {makeOption}
+                    </MenuItem>
+                  ))}
+                </TextField>
                 <TextField
                   fullWidth
                   margin="normal"

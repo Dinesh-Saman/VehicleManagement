@@ -138,6 +138,11 @@ const UpdateVehicle = () => {
     if (!status) newErrors.status = "Status is required.";
     if (!mileage) newErrors.mileage = "Mileage is required.";
     if (!lastServiceMileage) newErrors.lastServiceMileage = "Last Service Mileage is required.";
+
+    // Validate last service mileage doesn't exceed current mileage
+    if (parseInt(lastServiceMileage) > parseInt(mileage)) {
+      newErrors.lastServiceMileage = "Last service mileage cannot exceed current mileage.";
+    }
     return newErrors;
   };
 
@@ -301,6 +306,7 @@ const UpdateVehicle = () => {
                   onChange={(e) => setMileage(e.target.value)}
                   helperText={errors.mileage}
                   error={!!errors.mileage}
+                  InputProps={{ inputProps: { min: 0 } }}
                   required
                 />
                 <TextField
@@ -313,6 +319,7 @@ const UpdateVehicle = () => {
                   onChange={(e) => setLastServiceMileage(e.target.value)}
                   helperText={errors.lastServiceMileage}
                   error={!!errors.lastServiceMileage}
+                  InputProps={{ inputProps: { min: 0 } }}
                   required
                 />
                 <TextField
