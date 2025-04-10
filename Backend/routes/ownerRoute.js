@@ -27,4 +27,7 @@ router.get('/gender-counts', ownerController.getOwnerCountsByGender);
 // Search owners by name
 router.get('/search', ownerController.searchOwnersByName);
 
+// Get the owner Vehicles
+router.post('/vehicles', ownerController.getLoggedInOwnerVehicles);
+
 module.exports = router;
