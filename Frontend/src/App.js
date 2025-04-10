@@ -31,6 +31,11 @@ import UpdateServiceReminder from './Pages/ServiceReminder/update_service_remind
 import ServiceReminderReportPage from './Pages/ServiceReminder/service_reminder_report';
 import ServiceReminderAnalysisReport from './Pages/ServiceReminder/analysis_report';
 import ServiceReminderDashboard from './Pages/ServiceReminder/dashboard';
+import Home from './Pages/Home/HomePage';
+import UserLogin from './Pages/User/Login';
+import UserRegistration from './Pages/User/Register';
+import EditProfile from './Pages/User/EditProfile';
+import VehicleDetailsPage from './Pages/Owner/vehicle-details';
 
 function App() {
   return (
@@ -38,11 +43,12 @@ function App() {
         <Header></Header>
         <Routes>
           {/* Redirect from root to login */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<Home/>} />
           <Route path="/main-dashboard" element={<MainDashboard />} />
 
-          <Route path="/login" element={<Login/>} />
-          <Route path="/register" element={<Register/>} />
+          <Route path="/login" element={<UserLogin/>} />
+          <Route path="/register" element={<UserRegistration/>} />
+          <Route path="/profile" element={<EditProfile/>} />
           <Route path="/vehicle-dashboard" element={<VehicleManageDashboard />} />
           <Route path="/add-vehicle" element={<AddVehicle />} />
           <Route path="/update-vehicle/:id" element={<UpdateVehicle />} />
@@ -57,6 +63,7 @@ function App() {
           <Route path="/owner-management" element={<OwnerManagementDashboard />} />
           <Route path="/owner-dashboard" element={<OwnerDashboard />} />
           <Route path="/owner-analysis-report" element={<OwnerAnalysisReport />} />
+          <Route path="/my-vehicles" element={<VehicleDetailsPage />} />
 
           <Route path="/add-inventory" element={<AddInventory />} />
           <Route path="/view-inventory" element={<ViewInventory />} />
