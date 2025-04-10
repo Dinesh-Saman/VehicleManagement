@@ -1,5 +1,5 @@
 {
-  "name": "ananthaya_resort",
+  "name": "autodrive",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -12,7 +12,9 @@
     "ajv": "^6.12.6",
     "ajv-keywords": "^3.5.2",
     "ananthaya_resort": "file:",
+    "autodrive": "file:",
     "axios": "^1.7.2",
+    "dayjs": "^1.11.13",
     "file-saver": "^2.0.5",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.2",

@@ -379,3 +379,70 @@ exports.checkOwnerVehicles = async (req, res) => {
         res.status(500).json({ message: 'Server error checking owner vehicles' });
     }
 };
+
+exports.getLoggedInOwnerVehicles = async (req, res) => {
+    try {
+        // Get the email from request
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ 
+                message: "Email is required",
+                hint: "Make sure to send the logged-in user's email in the request body"
+            });
+        }
+
+        // 1. Find the owner by email
+        const owner = await Owner.findOne({ email });
+        
+        if (!owner) {
+            return res.status(404).json({ 
+                message: "Owner not found with this email",
+                email
+            });
+        }
+
+        // 2. Find vehicles using the IDs from owner's vehicles array
+        const vehicles = await Vehicle.find({ 
+            _id: { $in: owner.vehicles } 
+        })
+        .lean();
+
+        console.log('Found vehicles:', vehicles);
+
+        // 3. Return the response
+        res.status(200).json({
+            message: "Owner vehicles retrieved successfully",
+            owner: {
+                id: owner._id,
+                owner_id: owner.owner_id,
+                name: owner.name,
+                email: owner.email,
+                contact: owner.contact,
+                license_number: owner.license_number,
+                date_of_birth: owner.date_of_birth,
+                gender: owner.gender
+            },
+            vehicles: vehicles.map(vehicle => ({
+                id: vehicle._id,
+                vehicle_id: vehicle.vehicle_id,
+                make: vehicle.make,
+                model: vehicle.model,
+                year: vehicle.year,
+                registration_number: vehicle.registrationNumber,
+                color: vehicle.color,
+                fuelType: vehicle.fuelType,
+                vehicleType: vehicle.vehicleType,
+                lastServiceMileage: vehicle.lastServiceMileage,
+                service_reminders: vehicle.service_reminders || []
+            }))
+        });
+
+    } catch (err) {
+        console.error('Error fetching owner vehicles:', err);
+        res.status(500).json({ 
+            message: "Server error while fetching owner vehicles",
+            error: err.message 
+        });
+    }
+};
